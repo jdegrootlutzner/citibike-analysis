@@ -2,7 +2,7 @@
 
  **Final Project for ma154** *(Fall Semester 2017)*
 
-*Team Members:* Julian DeGroot-Lutzner, Vickram Salwan
+*Team Members:* Julian DeGroot-Lutzner, Vikram Salwan
 
 
 ## Background & Motivation 
