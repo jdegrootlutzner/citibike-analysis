@@ -22,16 +22,16 @@ Secondly, we want to use Strava NYC Metro data about bicycle trips to understand
 
 [*Citi Bikes Data*](https://www.citibikenyc.com/system-data)
 
-*Variables : tripduration, starttime, stoptime, start station id, start station name, start station latitude, start station longitude, end station id, end station name, end station latitude, end station longitude, bikeid, usertype, birth year, gender
+* Variables : tripduration, starttime, stoptime, start station id, start station name, start station latitude, start station longitude, end station id, end station name, end station latitude, end station longitude, bikeid, usertype, birth year, gender
 This data will be the beginning and base of our project. We will first combine this data with historical weather data, which we will get from the [weather data package](https://cran.r-project.org/web/packages/weatherData/README.html). 
 
 [*Strava Data*](https://stravametro.exavault.com/share/view/h48l-5hq0lubm?utm_source=hs_automation&utm_medium=email&utm_content=29456275&_hsenc=p2ANqtz-_OhD5MxKs_x5i-U9ucr5ZAD4SnLJHROjk492autxIpQctBaN7UQ9NgmEyZe5vB2vfXWeMXlEpqUSQ261M5A1VsTc1eJyXF-qQ90LilJ8eP8XdofKQ&_hsmi=29456275)
 
-*This data is much more complex than the Citi Bikes data. There is a 40 page manual on understanding it. The data is spatial data and includes a list of nodes, edges, and polygons. It will give us insight into the ways that people move between Citi Bike locations. It will provide great resources for visualization. 
+* This data is much more complex than the Citi Bikes data. There is a 40 page manual on understanding it. The data is spatial data and includes a list of nodes, edges, and polygons. It will give us insight into the ways that people move between Citi Bike locations. It will provide great resources for visualization. 
 
 *Bike Path Data*
 
-*This is where the high reach goals of our project begin. NYC DOT provides [a list](http://home2.nyc.gov/html/dot/html/bicyclists/lane-list.shtml?) of all the bike paths, and the [historical records](http://www.nyc.gov/html/dot/html/bicyclists/past-bike-projects.shtml) of when these bike paths were created. We will try to find a bike path that was completed during the dates of the Strava data we have. Then we will be able to visualize the difference in traffic patterns in the neighborhood around the bike path before and after the bike path was created. We will probably not even need to bring the dataset into R as we will look through it manually. The visualization will be the difficult part.
+* This is where the high reach goals of our project begin. NYC DOT provides [a list](http://home2.nyc.gov/html/dot/html/bicyclists/lane-list.shtml?) of all the bike paths, and the [historical records](http://www.nyc.gov/html/dot/html/bicyclists/past-bike-projects.shtml) of when these bike paths were created. We will try to find a bike path that was completed during the dates of the Strava data we have. Then we will be able to visualize the difference in traffic patterns in the neighborhood around the bike path before and after the bike path was created. We will probably not even need to bring the dataset into R as we will look through it manually. The visualization will be the difficult part.
 
 
 ## Expected Work/Deliverables
