@@ -11,6 +11,7 @@
 We have two goals. 
 
 For one, we want to combine historical usage patterns of CitiBikes with weather data in order to forecast bike rental demand. This idea is based on a related [Kaggle competition](https://www.kaggle.com/c/bike-sharing-demand#description) and will challenge us to use the material we are about to learn on statistical models and machine learning.
+* Instead of using the Kaggle data, we want to wrangle the Citibikes data and our own collected weather data so that we can get familiar with the process of preparing a dataset for analysis.
 * We wil explore the data to see trends, make inferences, test hypothesis, and generate new features such as using rpart to create bins based on time of the day.
 * We will divide the data into a training set and a test set to test the accuracy of different models including random forest.
 * We will look into if there are any inconsistencies in bike stations traffic. Is there a bike station that people take bikes from but do not take bikes back to? We will analyze why this happens. Is a bike station at the top of a hill? If there is an bike station that is a net exporter we will make recomendations on how often CitiBikes should manually transport bikes back to the station.
