@@ -16,7 +16,8 @@ For one, we want to combine historical usage patterns of CitiBikes with weather 
 * We will look into if there are any inconsistencies in bike stations traffic. Is there a bike station that people take bikes from but do not take bikes back to? We will analyze why this happens. Is a bike station at the top of a hill? If there is an bike station that is a net exporter we will make recomendations on how often CitiBikes should manually transport bikes back to the station.
 
 Secondly, we want to use Strava NYC Metro data about bicycle trips to understand if new bike paths affect bicycle patterns. More specifically, we want to see if the traffic is redirected towards the bicycle path after its inception. We will measure this by counting the ratio of bikers in the neighborhood before and after the creation of the bike path. This part of the project will be more about visualization as we will learn and use Shiny/Leaflet. We will visualize the traffic by making points move around over the bike paths in a week. We fill focus in on the popular Citibikes locations. 
-* [Here](http://toddwschneider.com/posts/a-tale-of-twenty-two-million-citi-bikes-analyzing-the-nyc-bike-share-system/) is an example of what we want to make. However, it will be zoomed in on a speciic neighborhood.
+* [Here](http://toddwschneider.com/posts/a-tale-of-twenty-two-million-citi-bikes-analyzing-the-nyc-bike-share-system/) is an example of a Shiny app that we want to make. However, ours will be zoomed in on a speciic neighborhood where a new bike path was created during the time frame.
+* If we cannot get to working with the Strava data we will make an applet for just the Citibike data
 
 ## Description of Dataset
 
