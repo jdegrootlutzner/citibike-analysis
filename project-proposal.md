@@ -43,5 +43,5 @@ Our final project will be a predictive model, a Shiny applet online about the im
 ## Expected Background Materials/Resources
 * [Data Science for Social Good](https://dssg.uchicago.edu/2016/10/27/scoping-data-science-for-social-good-projects/) (Good advice on refining the objectives of a project) 
 * [Leaflet](https://rstudio.github.io/leaflet/)
-
+* [An Introduction to Visualizing Spatial Data in R](https://cran.r-project.org/doc/contrib/intro-spatial-rl.pdf)
 
