@@ -11,6 +11,15 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Something something
 ```{r}
+library(tidyr)
+library(RMySQL)
+conn <- dbConnect(MySQL(), dbname = "bike_data", port = 3306)
+csv_list <- scan("csvFiles.txt", what= "character", sep="\n")
 
+dbWriteTable(conn, name = "bike_data", value = csv_list[1])
+for(i in 2:length(csv_list)){
+  dbWriteTable(conn, name = "bike_data", append = TRUE, value = csv_list[i])
+}
+dbGetQuery(conn, "SELECT * from bike_data LIMIT 10")
 ```
 
