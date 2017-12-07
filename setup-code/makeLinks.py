@@ -21,14 +21,14 @@ def makeLinks():
         convert_to_month(month) +
         "-citibike-tripdata.zip\n")
     # Add years 2014-2016
-    for year in range(2014, 2016):
+    for year in range(2014, 2017):
         for month in range(1, 13):
             output_text.write("https://s3.amazonaws.com/tripdata/" +
             str(year) +
             convert_to_month(month) +
             "-citibike-tripdata.zip\n")
     # Add year 2017
-    for month in range(1, 9):
+    for month in range(1, 10):
         output_text.write("https://s3.amazonaws.com/tripdata/2017" +
         convert_to_month(month) +
         "-citibike-tripdata.csv.zip\n")
@@ -42,13 +42,13 @@ def makeZips():
         convert_to_month(month) +
         "-citibike-tripdata.zip\n")
     # Add years 2014-2016
-    for year in range(2014, 2016):
-        for month in range(1, 12):
+    for year in range(2014, 2017):
+        for month in range(1, 13):
             output_text.write(str(year) +
             convert_to_month(month) +
             "-citibike-tripdata.zip\n")
     # Add year 2017
-    for month in range(1, 9):
+    for month in range(1, 10):
         output_text.write("2017" +
         convert_to_month(month) +
         "-citibike-tripdata.csv.zip\n")
