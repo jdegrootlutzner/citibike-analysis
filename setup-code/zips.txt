@@ -3,6 +3,7 @@
 201309-citibike-tripdata.zip
 201310-citibike-tripdata.zip
 201311-citibike-tripdata.zip
+201312-citibike-tripdata.zip
 201401-citibike-tripdata.zip
 201402-citibike-tripdata.zip
 201403-citibike-tripdata.zip
