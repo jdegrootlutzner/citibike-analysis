@@ -1,20 +1,4 @@
----
-title: "analysis"
-author: "Julian DeGroot-Lutzner & Vickram Salwan"
-date: "12/4/2017"
-output: pdf_document
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-## Something something
-```{r}
-
-csvFiles.txt
-
-library(RMySQL)
+require(RMySQL, dplyr)
 conn <- dbConnect(MySQL(), dbname = "bike_data", port = 3306)
 need_help_list <- scan("needHelp.txt", what= "character", sep="\n")
 no_help_list <- scan("noHelp.txt", what= "character", sep="\n")
@@ -41,28 +25,4 @@ for(l in 1:length(no_help_list)){
   message("Added.")
 }
 message("Done!")
-
-dbWriteTable(conn, name = "bike", value = csv_list[1])
-for(i in 2:length(csv_list)){
-  dbWriteTable(conn, name = "bike", append = TRUE, value = csv_list[i])
-
-
-  
-# returns number of rows in table 
-# 922687
-dbGetQuery(conn, "SELECT count(*) FROM bike;")
-
-bike_table <- tbl(conn, "bike")
-
-}
-```
-
-# code for getting every other line
-sed -n 1~2p input.csv > output.csv
-
-#code for counting every line
-sed -n '$=' file.csv
-
-#ignore logout
-nohup Rscript script
-
+message(dbGetQuery(conn, "SELECT count(*) FROM bike;"))
