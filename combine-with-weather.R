@@ -1,26 +1,3 @@
----
-title: "Team Bike"
-output: html_document
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-
-```{r warning=FALSE}
-library(dplyr)
-library(ggplot2)
-library(readr)
-library(lubridate)
-library(chron)
-NYC <- read_csv("~/Desktop/compstats/ma154-project24-teambike/NYC.txt")
-
-julycity <- read_csv("~/Downloads/2013-07 - Citi Bike trip data.csv")
-```
-
-
-```{r}
 # Removing the extraneous variables
 NYC <- NYC %>%
   select(-drct,-p01i,-skyc1,-skyc2,-skyc3,-skyc4,skyl1,-skyl2,-skyl2,-skyl3,-skyl4,-metar)
@@ -33,17 +10,20 @@ NYC$valid <- parse_date_time(NYC$valid,orders = "ymd H:M:S")
 julycity$starttime <- parse_date_time(julycity$starttime, orders = "ymd H:M:S")
 julycity$stoptime <- parse_date_time(julycity$stoptime, orders = "ymd H:M:S")
 
-
+# Substringing the date and the time if need be. Making a new variable month, which will help to make variables for the season. 
 NYC <- NYC %>%
-  mutate(summer=ifelse(valid<"2013-08-30 23:59:00"&&valid>"2013-05-31",1,0)) %>%
-  mutate(spring=ifelse((valid>"2013-03-01"&&valid<"2013-05-31"),1,0)) %>%
-  mutate(winter=ifelse((valid>"2013-12-01"&&valid<"2014-02-27"),1,0)) %>%
-  mutate(fall=ifelse((valid>"2013-08-31"&&valid<"2013-11-30"),1,0))
-  
-# Substringing the date and the time if need be 
-NYC <- NYC %>%
-  mutate(Month=substr(valid,6,7)) %>%
+  mutate(Month=month(valid)) %>%
   mutate(date=substr(valid,1,10))
+
+# Making Binary Variables for the Seasons
+NYC <- NYC %>%
+  mutate(summer=ifelse(Month=="6"|Month=="7"|Month=="8",1,0)) %>%
+  mutate(spring=ifelse((Month=="3"|Month=="4"|Month=="5"),1,0)) %>%
+  mutate(winter=ifelse((Month=="1"|Month=="2"|Month=="12"),1,0)) %>%
+  mutate(fall=ifelse((Month=="9"|Month=="10"|Month=="11"),1,0))
+  
+month(NYC$valid)
+
 
 # Trying to Find Day of the Week
 NYC <- NYC %>%
@@ -52,9 +32,9 @@ NYC <- NYC %>%
 
 # Trying to find the holidays - Not quite working. Need to do this manually!
 NYC <- NYC %>%
-  mutate(holiday=is.holiday(valid))
+  mutate(holiday=is.weekend(valid))
 
-# Trying to get hourly data - one observation per hour
+# Trying to get hourly data - one observation per hour, instead of multiple observations
 NYC <- NYC %>%
   filter(minute(valid)=="51") %>%
   mutate(uid=substr(valid,1,13))
@@ -70,4 +50,3 @@ str(julycity$uid)
 a <- left_join(NYC,julycity,by="uid")
 
 # take a look, I was able to join the two data frames based on the date and hour. I used hourly data when the minute is 51 to maintain uniformity.  
-```
