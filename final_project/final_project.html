@@ -173,7 +173,8 @@ hourly_sum &lt;- dbGetQuery(conn, &quot;SELECT starttime, usertype, count(*)
 {"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["tripduration"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["starttime"],"name":[2],"type":["chr"],"align":["left"]},{"label":["stoptime"],"name":[3],"type":["chr"],"align":["left"]},{"label":["start.station.id"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["start.station.name"],"name":[5],"type":["chr"],"align":["left"]},{"label":["start.station.latitude"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["start.station.longitude"],"name":[7],"type":["dbl"],"align":["right"]},{"label":["end.station.id"],"name":[8],"type":["dbl"],"align":["right"]},{"label":["end.station.name"],"name":[9],"type":["chr"],"align":["left"]},{"label":["end.station.latitude"],"name":[10],"type":["dbl"],"align":["right"]},{"label":["end.station.longitude"],"name":[11],"type":["dbl"],"align":["right"]},{"label":["bikeid"],"name":[12],"type":["dbl"],"align":["right"]},{"label":["usertype"],"name":[13],"type":["chr"],"align":["left"]},{"label":["birth.year"],"name":[14],"type":["dbl"],"align":["right"]},{"label":["gender"],"name":[15],"type":["dbl"],"align":["right"]}],"data":[{"1":"887","2":"2014-01-11 09:37:27","3":"2014-01-11 09:52:14","4":"472","5":"E 32 St & Park Ave","6":"40.75","7":"-73.98","8":"151","9":"Cleveland Pl & Spring St","10":"40.72","11":"-74.00","12":"15252","13":"Subscriber","14":"1971","15":"2","_rn_":"1"},{"1":"368","2":"2014-07-12 13:18:38","3":"2014-07-12 13:24:46","4":"511","5":"E 14 St & Avenue B","6":"40.73","7":"-73.98","8":"483","9":"E 12 St & 3 Ave","10":"40.73","11":"-73.99","12":"15299","13":"Subscriber","14":"1989","15":"1","_rn_":"2"},{"1":"1632","2":"7/26/2015 14:14:22","3":"7/26/2015 14:41:35","4":"499","5":"Broadway & W 60 St","6":"40.77","7":"-73.98","8":"72","9":"W 52 St & 11 Ave","10":"40.77","11":"-73.99","12":"15043","13":"Customer","14":"0","15":"0","_rn_":"3"},{"1":"261","2":"9/2/2016 15:15:32","3":"9/2/2016 15:19:54","4":"263","5":"Elizabeth St & Hester St","6":"40.72","7":"-74.00","8":"312","9":"Allen St & Stanton St","10":"40.72","11":"-73.99","12":"25903","13":"Subscriber","14":"1994","15":"1","_rn_":"4"},{"1":"273","2":"2017-02-07 21:46:29","3":"2017-02-07 21:51:02","4":"492","5":"W 33 St & 7 Ave","6":"40.75","7":"-73.99","8":"442","9":"W 27 St & 7 Ave","10":"40.75","11":"-73.99","12":"17639","13":"Subscriber","14":"1956","15":"1","_rn_":"5"},{"1":"605","2":"2017-07-06 19:29:17","3":"2017-07-06 19:39:23","4":"471","5":"Grand St & Havemeyer St","6":"40.71","7":"-73.96","8":"3076","9":"Scholes St & Manhattan Ave","10":"40.71","11":"-73.94","12":"21352","13":"Subscriber","14":"1976","15":"2","_rn_":"6"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
-<pre><code># count the number of rides 
+<pre><code>
+# count the number of rides 
 daily_sums &lt;- random_sample %&gt;% 
   mutate(day = floor_date(starttime, &quot;day&quot;),
          week = floor_date(starttime, &quot;week&quot;),
@@ -185,16 +186,13 @@ daily_sums &lt;- random_sample %&gt;%
   group_by(start.station.id, start.station.name,
            start.station.latitude, start.station.longitude) %&gt;%
   summarize(total.time = sum(tripduration),start.count = n())</code></pre>
-<pre class="r"><code>head(start_sums)</code></pre>
-<div data-pagedtable="false">
-<script data-pagedtable-source type="application/json">
-{"columns":[{"label":["start.station.id"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["start.station.name"],"name":[2],"type":["chr"],"align":["left"]},{"label":["start.station.latitude"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["start.station.longitude"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["total.time"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["start.count"],"name":[6],"type":["int"],"align":["right"]}],"data":[{"1":"72","2":"W 52 St & 11 Ave","3":"40.77","4":"-73.99","5":"1517721","6":"1419"},{"1":"79","2":"Franklin St & W Broadway","3":"40.72","4":"-74.01","5":"956121","6":"1093"},{"1":"82","2":"St James Pl & Pearl St","3":"40.71","4":"-74.00","5":"507756","6":"471"},{"1":"83","2":"Atlantic Ave & Fort Greene Pl","3":"40.68","4":"-73.98","5":"720832","6":"567"},{"1":"116","2":"W 17 St & 8 Ave","3":"40.74","4":"-74.00","5":"1513339","6":"2124"},{"1":"119","2":"Park Ave & St Edwards St","3":"40.70","4":"-73.98","5":"71298","6":"98"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
-  </script>
-</div>
-<pre><code>end_sums &lt;- original_bike_table %&gt;%
-  group_by(end.station.id) %&gt;%
-  summarize(total.time = sum(tripduration),start.count = n()) %&gt;%
-  collect()</code></pre>
+<pre class="r"><code>start_sums &lt;- start_sums %&gt;% 
+  mutate(avg.time = total.time/start.count)</code></pre>
+<pre class="r"><code>write.csv(random_sample, &quot;randomsample.csv&quot;)</code></pre>
+<p>mymap&lt;- get_map(location = “New York”, maptype = “roadmap”)</p>
+<p>ggmap(mymap) + geom_point(data = start_sums, aes(x=start.station.longitude, y=start.station.latitude, fill =“red”, alpha = 0.8), size =5, shape = guides(fill=FALSE, alpha= FALSE, size= FALSE))</p>
+<pre><code></code></pre>
+<p>end_sums &lt;- original_bike_table %&gt;% group_by(end.station.id) %&gt;% summarize(total.time = sum(tripduration),start.count = n()) %&gt;% collect() ```</p>
 <pre class="r"><code>dbDisconnect(conn)</code></pre>
 <pre><code>## [1] TRUE</code></pre>
 </div>

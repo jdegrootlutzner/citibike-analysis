@@ -79,6 +79,7 @@ random_sample <- dbGetQuery(conn, "SELECT * FROM bike2 ORDER BY RAND() LIMIT 500
 head(random_sample)
 ```
 ```
+
 # count the number of rides 
 daily_sums <- random_sample %>% 
   mutate(day = floor_date(starttime, "day"),
@@ -103,6 +104,8 @@ start_sums <- start_sums %>%
 
 
 ```{r}
+write.csv(random_sample, "randomsample.csv")
+```
 mymap<- get_map(location = "New York", maptype = "roadmap")
 
 ggmap(mymap) + geom_point(data = start_sums,
