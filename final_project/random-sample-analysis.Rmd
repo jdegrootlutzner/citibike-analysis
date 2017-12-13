@@ -24,38 +24,21 @@ randomsample <- read_csv("~/Documents/math154/ma154-project24-teambike/final_pro
 ```
 
 
+
 ```{r,cache=TRUE}
 start_sums <- randomsample %>%
-  group_by(start.station.id, start.station.name,
-           start.station.latitude, start.station.longitude) %>%
-  summarize(total.time.out = sum(tripduration),start.count = n())
-
-start_sums <- start_sums %>% 
+  group_by(start.station.id) %>%
+  summarize(start.station.longitude = mean(start.station.longitude),
+            start.station.latitude = mean(start.station.latitude),
+            total.time.out = sum(tripduration),
+            start.count = n()) %>% 
   mutate(avg.time.out = total.time.out/start.count) %>%
-  select(-total.time.out)
-
-start_sums <- start_sums %>% ungroup
-```
-
-```{r,cache= TRUE }
-end_sums <- randomsample %>%
-  group_by(end.station.id, end.station.name,
-           end.station.latitude, end.station.longitude) %>%
-  summarize(total.time.in = sum(tripduration),end.count = n())
-
-end_sums <- end_sums %>% 
-  mutate(avg.time.in = total.time.in/end.count) %>%
-  select(-total.time.in)
-
-end_sums <- end_sums %>% ungroup
+  select(-total.time.out) %>% 
+  ungroup()
 ```
 
 
-
-```{r, cache = TRUE}
-head(start_sums)
-```
-
+The Map Used
 ```{r, cache = TRUE}
 center.citibikes <- c(
   lon = mean(randomsample$start.station.longitude),
@@ -65,6 +48,7 @@ mymap <- get_map(location = center.citibikes,
                  zoom = 12)
 ```
 
+Location of Stations Map
 ```{r, cache = TRUE}
  ggmap(mymap, extent = "panel", maprange=FALSE) +
   geom_density2d(data = start_sums, 
@@ -79,13 +63,23 @@ mymap <- get_map(location = center.citibikes,
   theme(legend.position = "none", axis.title = element_blank(), text = element_text(size = 12))
 ```
 
-
+Count visualization Map
 ```{r, cache=TRUE}
 ggmap(mymap) +  geom_point(data = start_sums, 
                            aes(x = start.station.longitude,
                                y = start.station.latitude,
                                fill = "red", alpha = start.count),
-                           size = 4, shape = 21) +
+                           size = 1, shape = 21) +
+  guides(fill=FALSE, alpha=FALSE, size=FALSE)
+```
+
+Avg. Trip Time Map
+```{r, cache=TRUE}
+ggmap(mymap) +  geom_point(data = start_sums, 
+                           aes(x = start.station.longitude,
+                               y = start.station.latitude,
+                               fill = "red", alpha = avg.time.out),
+                           size = 1, shape = 21) +
   guides(fill=FALSE, alpha=FALSE, size=FALSE)
 ```
 
@@ -95,10 +89,95 @@ start_sums %>%
   arrange(desc(start.count)) %>%
   select(-start.station.latitude, -start.station.longitude) %>%
   head()
-```
 start_sums %>% 
-  arrange(desc(avg.time)) %>%
+  arrange(desc(avg.time.out)) %>%
   select(-start.station.latitude, -start.station.longitude) %>%
   head()
+```
+
+```{r,cache= TRUE }
+end_sums <- randomsample %>%
+  group_by(end.station.id) %>%
+  summarize(end.station.longitude = mean(end.station.longitude),
+            end.station.latitude = mean(end.station.latitude),
+            total.time.in = sum(tripduration),
+            end.count = n()) %>% 
+  mutate(avg.time.in = total.time.in/end.count) %>%
+  select(-total.time.in) %>% 
+  ungroup()
+```
+
+```{r,cache=TRUE}
+colnames(start_sums)[1]<- c("id")
+colnames(end_sums)[1] <- c("id")
+joined_data<-left_join(start_sums,end_sums,by="id")
+joined_data <- joined_data %>%
+mutate(difference = start.count - end.count,
+       station.latitude = 
+         (start.station.latitude+ end.station.latitude)/2,
+       station.longitude = 
+         (start.station.longitude + end.station.longitude)/2) %>%
+  select(-start.station.latitude,
+         -start.station.longitude,
+         -end.station.longitude,
+         -end.station.latitude)
+
+```
+
+```{r, cache=TRUE}
+biggest_differences <- joined_data %>% 
+  arrange(desc(difference)) %>%
+head(10)
+biggest_differences %>% 
+    select(station.latitude, station.longitude)
+
+smallest_differences <- joined_data %>% 
+  arrange(difference) %>%
+head(10)
+smallest_differences %>%
+  select(station.latitude, station.longitude)
+```
+
+Difference visualization Map
+```{r, cache=TRUE}
+ggmap(mymap) +  geom_point(data = joined_data, 
+                           aes(x = station.longitude,
+                               y = station.latitude,
+                               fill = "red", alpha = difference),
+                           size = 1, shape = 21) +
+  guides(fill=FALSE, alpha=FALSE, size=FALSE) +
+  geom_point(data=biggest_differences,
+             aes(x = station.longitude,
+                 y = station.latitude,
+                 fill = "red",
+                 alpha = 1.0),
+             size = 1, shape = 21) +
+    geom_point(data=smallest_differences,
+             aes(x = station.longitude,
+                 y = station.latitude,
+                 fill = "blue",
+                 alpha = 1.0),
+             size = 1, shape = 21)
+```
+```{r}
+ggmap(mymap) +  
+    geom_point(data=smallest_differences,
+             aes(x = station.longitude,
+                 y = station.latitude,
+                 fill = "blue",
+                 alpha = 1.0),
+             size = 1, shape = 21) + 
+  guides(fill=FALSE, alpha=FALSE, size=FALSE) 
+```
+
+```{r}
+ggmap(mymap) +  
+  geom_point(data=biggest_differences,
+             aes(x = station.longitude,
+                 y = station.latitude,
+                 fill = "red",
+                 alpha = 1.0),
+             size = 1, shape = 21) +
+  guides(fill=FALSE, alpha=FALSE, size=FALSE) 
 
 ```
