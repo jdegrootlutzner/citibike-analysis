@@ -9,8 +9,22 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Something something
+
 ```{r}
+
+
+require(ggmap)
+mymap <- get_map(location = "New York", maptype = "roadmap")
+ 
+ggmap(mymap)
+
+```
+
+
+
+
+## Something something
+```
 
 csvFiles.txt
 
@@ -50,7 +64,7 @@ for(i in 2:length(csv_list)){
   
 # returns number of rows in table 
 # 922687
-dbGetQuery(conn, "SELECT count(*) FROM bike;")
+dbGetQuery(conn, "SELECT count(*) FROM bike2;")
 
 bike_table <- tbl(conn, "bike")
 

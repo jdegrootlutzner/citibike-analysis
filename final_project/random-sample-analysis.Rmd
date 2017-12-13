@@ -1,0 +1,104 @@
+---
+title: "sample-analysis"
+author: "Julian DeGroot-Lutzner & Adi Salwan"
+date: "12/13/2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo= TRUE, message = FALSE, warning = FALSE,
+                      fig.width = 7, fig.height = 4,
+                      fig.align = "center")
+options(digits=4)
+
+require(dplyr)
+require(ggplot2)
+require(lubridate)
+require(ggmap)
+
+```
+## f
+```{r, cache=TRUE}
+library(readr)
+randomsample <- read_csv("~/Documents/math154/ma154-project24-teambike/final_project/randomsample.csv")
+```
+
+
+```{r,cache=TRUE}
+start_sums <- randomsample %>%
+  group_by(start.station.id, start.station.name,
+           start.station.latitude, start.station.longitude) %>%
+  summarize(total.time.out = sum(tripduration),start.count = n())
+
+start_sums <- start_sums %>% 
+  mutate(avg.time.out = total.time.out/start.count) %>%
+  select(-total.time.out)
+
+start_sums <- start_sums %>% ungroup
+```
+
+```{r,cache= TRUE }
+end_sums <- randomsample %>%
+  group_by(end.station.id, end.station.name,
+           end.station.latitude, end.station.longitude) %>%
+  summarize(total.time.in = sum(tripduration),end.count = n())
+
+end_sums <- end_sums %>% 
+  mutate(avg.time.in = total.time.in/end.count) %>%
+  select(-total.time.in)
+
+end_sums <- end_sums %>% ungroup
+```
+
+
+
+```{r, cache = TRUE}
+head(start_sums)
+```
+
+```{r, cache = TRUE}
+center.citibikes <- c(
+  lon = mean(randomsample$start.station.longitude),
+  lat = mean(randomsample$start.station.latitude))
+mymap <- get_map(location = center.citibikes,
+                 maptype = "roadmap",
+                 zoom = 12)
+```
+
+```{r, cache = TRUE}
+ ggmap(mymap, extent = "panel", maprange=FALSE) +
+  geom_density2d(data = start_sums, 
+                           aes(x = start.station.longitude,
+                               y = start.station.latitude)) +
+  stat_density2d(data = start_sums, 
+                           aes(x = start.station.longitude,
+                               y = start.station.latitude, fill = ..level.., alpha = ..level..),
+                 size = 0.01, bins = 16, geom = 'polygon') +
+  scale_fill_gradient(low = "green", high = "red") +
+  scale_alpha(range = c(0.00, 0.25), guide = FALSE) +
+  theme(legend.position = "none", axis.title = element_blank(), text = element_text(size = 12))
+```
+
+
+```{r, cache=TRUE}
+ggmap(mymap) +  geom_point(data = start_sums, 
+                           aes(x = start.station.longitude,
+                               y = start.station.latitude,
+                               fill = "red", alpha = start.count),
+                           size = 4, shape = 21) +
+  guides(fill=FALSE, alpha=FALSE, size=FALSE)
+```
+
+
+```{r}
+start_sums %>% 
+  arrange(desc(start.count)) %>%
+  select(-start.station.latitude, -start.station.longitude) %>%
+  head()
+```
+start_sums %>% 
+  arrange(desc(avg.time)) %>%
+  select(-start.station.latitude, -start.station.longitude) %>%
+  head()
+
+```
