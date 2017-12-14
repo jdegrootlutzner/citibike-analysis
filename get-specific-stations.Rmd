@@ -20,6 +20,7 @@ require(ggplot2)
 require(RMySQL)
 require(lubridate)
 require(ggmap)
+
 ```
 
 
@@ -42,13 +43,11 @@ station_432 <- original_bike_table %>%
 dim(station_432)
 ```
 
-
 ```{r}
-NYC <- NYC %>%
-  mutate(valid=ceiling_date(NYC$valid, unit = "hour"))
+write.csv(station_521, "station-521.csv")
+write.csv(station_432, "station-432.csv")
 
 ```
-
 
 
 
