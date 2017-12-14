@@ -1,0 +1,54 @@
+---
+title: "get-specific-stations"
+author: "Julian DeGroot-Lutzner & Adi Salwan"
+date: "12/4/207"
+output:
+  html_document:
+    df_print: paged
+  pdf_document:
+    latex_engine: lualatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo= TRUE, message = FALSE, warning = FALSE,
+                      fig.width = 7, fig.height = 4,
+                      fig.align = "center")
+options(digits=4)
+
+require(dplyr)
+require(ggplot2)
+require(RMySQL)
+require(lubridate)
+require(ggmap)
+```
+
+
+```{r}
+conn <- dbConnect(MySQL(), dbname = "bike_data", port = 3306)
+original_bike_table <- tbl(conn, "bike2")
+```
+
+```{r, cache = TRUE}
+station_521 <- original_bike_table %>%
+  filter(start.station.id == 521 | end.station.id == 521) %>%
+  collect()
+
+dim(station_521)
+
+station_432 <- original_bike_table %>%
+  filter(start.station.id == 432 | end.station.id == 432) %>%
+  collect()
+
+dim(station_432)
+```
+
+
+```{r}
+NYC <- NYC %>%
+  mutate(valid=ceiling_date(NYC$valid, unit = "hour"))
+
+```
+
+
+
+
