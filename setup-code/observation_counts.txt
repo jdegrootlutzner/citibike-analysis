@@ -1,0 +1,117 @@
+2013-07 - Citi Bike trip data.csv
+file count 843417
+total count 843417
+2013-08 - Citi Bike trip data.csv
+file count 1001959
+total count 1845376
+2013-09 - Citi Bike trip data.csv
+file count 1034360
+total count 2879736
+2013-10 - Citi Bike trip data.csv
+file count 1037713
+total count 3917449
+2013-11 - Citi Bike trip data.csv
+file count 675775
+total count 4593224
+2013-12 - Citi Bike trip data.csv
+file count 443967
+total count 5037191
+2014-01 - Citi Bike trip data.csv
+file count 300401
+total count 5337592
+2014-02 - Citi Bike trip data.csv
+file count 224737
+total count 5562329
+2014-03 - Citi Bike trip data.csv
+file count 439118
+total count 6001447
+2014-04 - Citi Bike trip data.csv
+file count 670781
+total count 6672228
+2014-05 - Citi Bike trip data.csv
+file count 866118
+total count 7538346
+2014-06 - Citi Bike trip data.csv
+file count 936881
+total count 8475227
+2014-07 - Citi Bike trip data.csv
+file count 968843
+total count 9444070
+2014-08 - Citi Bike trip data.csv
+file count 963490
+total count 10407560
+201409-citibike-tripdata.csv
+file count 953888
+total count 11361448
+201410-citibike-tripdata.csv
+file count 828712
+total count 12190160
+201411-citibike-tripdata.csv
+file count 529189
+total count 12719349
+201412-citibike-tripdata.csv
+file count 399070
+total count 13118419
+201501-citibike-tripdata.csv
+file count 285553
+total count 13403972
+201502-citibike-tripdata.csv
+file count 196931
+total count 13600903
+201503-citibike-tripdata.csv
+file count 341827
+total count 13942730
+201504-citibike-tripdata.csv
+file count 652391
+total count 14595121
+201505-citibike-tripdata.csv
+file count 961987
+total count 15557108
+201506-citibike-tripdata.csv
+file count 941220
+total count 16498328
+201507-citibike-tripdata.csv
+file count 1085677
+total count 17584005
+201508-citibike-tripdata.csv
+file count 1179045
+total count 18763050
+201509-citibike-tripdata.csv
+file count 1289700
+total count 20052750
+201510-citibike-tripdata.csv
+file count 1212278
+total count 21265028
+201511-citibike-tripdata.csv
+file count 987246
+total count 22252274
+201512-citibike-tripdata.csv
+file count 804126
+total count 23056400
+201601-citibike-tripdata.csv
+file count 509479
+total count 23565879
+201602-citibike-tripdata.csv
+file count 560875
+total count 24126754
+201603-citibike-tripdata.csv
+file count 919922
+total count 25046676
+201604-citibike-tripdata.csv
+file count 1013150
+total count 26059826
+201605-citibike-tripdata.csv
+file count 1212281
+total count 27272107
+201606-citibike-tripdata.csv
+file count 1460319
+total count 28732426
+201607-citibike-tripdata.csv
+file count 1380111
+total count 30112537
+201608-citibike-tripdata.csv
+file count 1557664
+total count 31670201
+201609-citibike-tripdata.csv
+file count 1648857
+total count 33319058

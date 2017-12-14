@@ -1,0 +1,131 @@
+---
+title: "Analysis"
+author: "Julian DeGroot-Lutzner & Vikram Salwan"
+date: "12/4/207"
+output:
+  html_document:
+    df_print: paged
+  pdf_document:
+    latex_engine: lualatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo= TRUE, message = FALSE, warning = FALSE,
+                      fig.width = 7, fig.height = 4,
+                      fig.align = "center")
+options(digits=4)
+
+require(dplyr)
+require(ggplot2)
+require(RMySQL)
+require(lubridate)
+require(ggmap)
+```
+
+#Background and Motivation
+Our project is inspired by the Kaggle bike sharing demand competition. Bike sharing is a service that has become popular within the last few years in many cities across the United States. Bikes are checked in and out of a network of stations and organizations keep track of each ride, its stat time/location, end time/location, as well as information about subscribers such as gender and age. The Kaggle competition challenged users to predict the hourly bike usage of a test dataset by building a model on a training set combing hourly weather data with hourly bike share usage in Washington, DC.
+
+Instead of using the Kaggle data, we wanted to wrangle bike sharing data from a different city's bike share dataset so that we could get familiar with the process of preparing a dataset for analysis. We decided on the Citibikes bike sharing dataset from New York because there is data available on every ride from January 1st, 2013 to September 31, 2017. The dataset is very large, over 40 million observations, and the complete set cannot be ran in R. Our new goal was too learn how to work with Big Data in R.
+
+The first difficulty in the project was uploading the Citibikes data to a SQL database. We worked on Hardin's Outlier sever using MySQL. Outlier is within the Pomona network so we needed to navigate both the Pomona ITS and Department firewall. Additonally, our limited permissions on our personal accounts made it difficult to update needed packages within R.
+
+Citibikes publishes a zip file for each month of data so there were over 50 seperate files to download. 
+```
+#!/bin/bash
+# A script to automate the download of all the Citibikes data
+
+IFS=$'\n'       # make newlines the only separator
+set -f          # disable globbing
+for link in $(cat < "$1"); do
+    wget "$link"
+done
+```
+
+
+```{r}
+# establish connection with database on mysql server
+conn <- dbConnect(MySQL(), dbname = "bike_data", port = 3306)
+original_bike_table <- tbl(conn, "bike2")
+```
+
+```{r, cache = TRUE}
+head(original_bike_table)
+```
+
+SQL does not support the lubridate package. Instead we needed to use SQL code to get the day, month, and year from the dates so that we could find the sums.
+
+```
+# count the number of rides 
+monthly_sums <- original_bike_table %>% 
+  mutate(week = floor_date(starttime, "week")) %>%
+  group_by(week) %>%
+  group_by(usertype) %>%
+  summarise(count = n()) %>%
+  collect()
+  
+hourly_sum <- dbGetQuery(conn, "SELECT starttime, usertype, count(*)
+                                FROM bike2 
+                                GROUP BY usertype, hour(starttime),
+                                day(starttime), month(starttime),
+                                year(starttime);")
+
+```
+We decided to collect a random 1% sample of training data
+```{r, cache= TRUE}
+random_sample <- dbGetQuery(conn, "SELECT * FROM bike2 ORDER BY RAND() LIMIT 500000")
+```
+
+```{r, cache=TRUE}
+head(random_sample)
+```
+```
+
+# count the number of rides 
+daily_sums <- random_sample %>% 
+  mutate(day = floor_date(starttime, "day"),
+         week = floor_date(starttime, "week"),
+         month = floor_date(starttime, "month")) %>%
+  group_by(usertype, day, week, month) %>%
+  summarise(count = n())
+```
+We decided to reorder our project. First we will find the stations of interest - the popular ones that export more bikes than they import. Then we will run models on the subset of data that includes these stations so that we can predict when more bikes should be added. 
+
+```{r,cache=TRUE}
+start_sums <- random_sample %>%
+  group_by(start.station.id, start.station.name,
+           start.station.latitude, start.station.longitude) %>%
+  summarize(total.time = sum(tripduration),start.count = n())
+```
+
+```{r,cache=TRUE}
+start_sums <- start_sums %>% 
+  mutate(avg.time = total.time/start.count)
+```
+
+
+```{r}
+write.csv(random_sample, "randomsample.csv")
+```
+mymap<- get_map(location = "New York", maptype = "roadmap")
+
+ggmap(mymap) + geom_point(data = start_sums,
+                          aes(x=start.station.longitude,
+                              y=start.station.latitude,
+                              fill ="red",
+                              alpha = 0.8), 
+                          size =5, shape = guides(fill=FALSE, 
+                                                  alpha= FALSE,
+                                                  size= FALSE))
+```
+```
+end_sums <- original_bike_table %>%
+  group_by(end.station.id) %>%
+  summarize(total.time = sum(tripduration),start.count = n()) %>%
+  collect()
+```
+
+
+
+```{r}
+dbDisconnect(conn)
+```
