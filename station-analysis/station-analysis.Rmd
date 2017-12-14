@@ -25,5 +25,112 @@ station_521 <- read.csv("station-521.csv")
 Weather_NYC <- read_csv("~/Documents/math154/ma154-project24-teambike/station-analysis/Weather_NYC.csv")
 ```
 
+# HERE COULD BE MORE ANALYSIS ABOUT EACH STATION
+How far does the average citibike move in a week?
+Change avg. trip duration to median. 
 
+```{r, cache= TRUE}
+# Parsing all the start times into one format
+mdy <- mdy_hms(station_432$starttime) 
+ymd <- ymd_hms(station_432$starttime) 
+f1 <- mdy_hm(station_432$starttime)
+mdy[is.na(mdy)] <- ymd[is.na(mdy)] 
+station_432$starttime <- mdy
+station_432$starttime[is.na(station_432$starttime)] <- f1[is.na(station_432$starttime)]
 
+# Parsing all the start times into one format
+mdy <- mdy_hms(station_521$starttime) 
+ymd <- ymd_hms(station_521$starttime) 
+f1 <- mdy_hm(station_521$starttime)
+mdy[is.na(mdy)] <- ymd[is.na(mdy)] 
+station_521$starttime <- mdy
+station_521$starttime[is.na(station_521$starttime)] <- f1[is.na(station_521$starttime)]
+```
+
+```{r, cache= TRUE}
+# took out rides that looped to the same station because these 
+# rides don't impact our prediction model
+median_ <- function(...) median(..., na.rm=T)
+
+# hourly sums of station 521
+hour_sums_521 <- station_521 %>% 
+  select(tripduration, starttime, start.station.id,
+         end.station.id, usertype) %>%
+  mutate(starttime = floor_date(starttime, "hour"),
+         started.here = (start.station.id == 521),
+         ended.here = (end.station.id == 521),
+         subscriber = (usertype == "Subscriber"),
+         customer = (usertype == "Customer")) %>%
+  mutate(duration.from.start = 
+          ifelse(started.here & !ended.here, tripduration, NA),
+         duration.to.finish = 
+          ifelse(!started.here & ended.here, tripduration, NA),
+         subscriber.started.here = 
+           (started.here & !ended.here & subscriber),
+         subscriber.ended.here = 
+           (!started.here & ended.here & subscriber),
+         customer.started.here = 
+           (started.here & !ended.here & subscriber),
+         customer.ended.here = 
+           (!started.here & ended.here & subscriber)) %>%
+  group_by(starttime) %>%
+  summarize(median.trip.from.521 = 
+              median_(duration.from.start),
+            median.trip.to.521 = 
+              median_(duration.to.finish),
+            num.subscribers.started.521 =
+              sum(subscriber.started.here),
+            num.subscribers.ended.521 =
+              sum(subscriber.ended.here),
+            num.customers.started.521 =
+              sum(customer.started.here),
+            num.customers.ended.521 =
+              sum(customer.started.here),
+            total.trips.started.521 =
+              sum(started.here & !ended.here),
+            total.trips.ended.521 =
+              sum(!started.here & ended.here))
+
+# hourly sums for station 432
+hour_sums_432 <- station_432 %>% 
+  select(tripduration, starttime, start.station.id,
+         end.station.id, usertype) %>%
+  mutate(starttime = floor_date(starttime, "hour"),
+         started.here = (start.station.id == 432),
+         ended.here = (end.station.id == 432),
+         subscriber = (usertype == "Subscriber"),
+         customer = (usertype == "Customer")) %>%
+  mutate(duration.from.start = 
+          ifelse(started.here & !ended.here, tripduration, NA),
+         duration.to.finish = 
+          ifelse(!started.here & ended.here, tripduration, NA),
+         subscriber.started.here = 
+           (started.here & !ended.here & subscriber),
+         subscriber.ended.here = 
+           (!started.here & ended.here & subscriber),
+         customer.started.here = 
+           (started.here & !ended.here & subscriber),
+         customer.ended.here = 
+           (!started.here & ended.here & subscriber)) %>%
+  group_by(starttime) %>%
+  summarize(median.trip.from.432 = 
+              median_(duration.from.start),
+            median.trip.to.432 = 
+              median_(duration.to.finish),
+            num.subscribers.started.432 =
+              sum(subscriber.started.here),
+            num.subscribers.ended.432 =
+              sum(subscriber.ended.here),
+            num.customers.started.432 =
+              sum(customer.started.here),
+            num.customers.ended.432 =
+              sum(customer.started.here),
+            total.trips.started.432 =
+              sum(started.here & !ended.here),
+            total.trips.ended.432 =
+              sum(!started.here & ended.here))
+```
+
+```{r}
+hourly_station_data <- left_join()
+```
