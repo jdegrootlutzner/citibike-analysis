@@ -1,0 +1,29 @@
+---
+title: "station-analysis"
+author: "Julian DeGroot-Lutzner"
+date: "12/14/2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo= TRUE, message = FALSE, warning = FALSE,
+                      fig.width = 7, fig.height = 4,
+                      fig.align = "center")
+options(digits=4)
+
+require(dplyr)
+require(ggplot2)
+require(RMySQL)
+require(lubridate)
+require(ggmap)
+require(readr)
+```
+
+```{r, cache=TRUE}
+station_432 <- read.csv("station-432.csv")
+station_521 <- read.csv("station-521.csv")
+Weather_NYC <- read_csv("~/Documents/math154/ma154-project24-teambike/station-analysis/Weather_NYC.csv")
+```
+
+
+
