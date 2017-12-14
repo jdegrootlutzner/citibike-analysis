@@ -107,35 +107,60 @@ end_sums <- randomsample %>%
   ungroup()
 ```
 
-```{r,cache=TRUE}
+```{r}
 colnames(start_sums)[1]<- c("id")
 colnames(end_sums)[1] <- c("id")
-joined_data<-left_join(start_sums,end_sums,by="id")
+joined_data<-inner_join(start_sums,end_sums,by="id")
 joined_data <- joined_data %>%
 mutate(difference = start.count - end.count,
        station.latitude = 
          (start.station.latitude+ end.station.latitude)/2,
        station.longitude = 
-         (start.station.longitude + end.station.longitude)/2) %>%
+         (start.station.longitude + end.station.longitude)/2,
+       total.ride.count = start.count + end.count) %>%
+  mutate(normalized.difference =
+           difference/(start.count+end.count),
+         positive.difference = difference>0) %>%
   select(-start.station.latitude,
          -start.station.longitude,
          -end.station.longitude,
-         -end.station.latitude)
+         -end.station.latitude) 
+```
+
+
+```{r}
 
 ```
 
-```{r, cache=TRUE}
+```{r
+ggplot(data = start_sums, aes(x=total.ride.count)) +
+  geom_histogram()
+
+```
+
+
+```{r}
+top_ten_perc <- joined_data$total.ride.count %>% 
+  quantile(0.90)
+```
+
+
+```{r}
 biggest_differences <- joined_data %>% 
-  arrange(desc(difference)) %>%
+  filter(total.ride.count >= top_ten_perc) %>%
+  arrange(desc(normalized.difference)) %>%
 head(10)
 biggest_differences %>% 
-    select(station.latitude, station.longitude)
+    select(id, start.count, end.count, 
+           difference, normalized.difference)
 
 smallest_differences <- joined_data %>% 
-  arrange(difference) %>%
+  filter(total.ride.count >= top_ten_perc) %>%
+  arrange(normalized.difference) %>%
 head(10)
 smallest_differences %>%
-  select(station.latitude, station.longitude)
+  select(id, start.count, end.count, 
+         difference, normalized.difference)
 ```
 
 Difference visualization Map
@@ -143,22 +168,24 @@ Difference visualization Map
 ggmap(mymap) +  geom_point(data = joined_data, 
                            aes(x = station.longitude,
                                y = station.latitude,
-                               fill = "red", alpha = difference),
+                               fill = positive.difference, 
+                               alpha = 0.7),
                            size = 1, shape = 21) +
   guides(fill=FALSE, alpha=FALSE, size=FALSE) +
   geom_point(data=biggest_differences,
              aes(x = station.longitude,
                  y = station.latitude,
-                 fill = "red",
+                 fill = "blue",
                  alpha = 1.0),
              size = 1, shape = 21) +
     geom_point(data=smallest_differences,
              aes(x = station.longitude,
                  y = station.latitude,
-                 fill = "blue",
+                 fill = "red",
                  alpha = 1.0),
              size = 1, shape = 21)
 ```
+
 ```{r}
 ggmap(mymap) +  
     geom_point(data=smallest_differences,
@@ -167,7 +194,7 @@ ggmap(mymap) +
                  fill = "blue",
                  alpha = 1.0),
              size = 1, shape = 21) + 
-  guides(fill=FALSE, alpha=FALSE, size=FALSE) 
+  guides(fill=FALSE, alpha=FALSE, size=FALSE)
 ```
 
 ```{r}
@@ -179,5 +206,23 @@ ggmap(mymap) +
                  alpha = 1.0),
              size = 1, shape = 21) +
   guides(fill=FALSE, alpha=FALSE, size=FALSE) 
-
 ```
+
+```{r}
+head(joined_data)
+stations_of_interest <- joined_data %>% 
+  filter(id == 521 | id == 432)
+stations_of_interest
+```
+
+```{r}
+ggmap(mymap) +  
+  geom_point(data=stations_of_interest,
+             aes(x = station.longitude,
+                 y = station.latitude,
+                 fill = positive.difference,
+                 alpha = 1.0),
+             size = 4, shape = 21) +
+  guides(fill=FALSE, alpha=FALSE, size=FALSE) 
+```
+
