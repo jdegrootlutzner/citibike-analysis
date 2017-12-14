@@ -17,6 +17,7 @@ require(RMySQL)
 require(lubridate)
 require(ggmap)
 require(readr)
+require(chron)
 ```
 
 ```{r, cache=TRUE}
@@ -61,11 +62,7 @@ hour_sums_521 <- station_521 %>%
          ended.here = (end.station.id == 521),
          subscriber = (usertype == "Subscriber"),
          customer = (usertype == "Customer")) %>%
-  mutate(duration.from.start = 
-          ifelse(started.here & !ended.here, tripduration, NA),
-         duration.to.finish = 
-          ifelse(!started.here & ended.here, tripduration, NA),
-         subscriber.started.here = 
+  mutate(subscriber.started.here = 
            (started.here & !ended.here & subscriber),
          subscriber.ended.here = 
            (!started.here & ended.here & subscriber),
@@ -73,6 +70,11 @@ hour_sums_521 <- station_521 %>%
            (started.here & !ended.here & subscriber),
          customer.ended.here = 
            (!started.here & ended.here & subscriber)) %>%
+  mutate_all(funs(ifelse(is.na(.), 0, .))) %>%
+  mutate(duration.from.start = 
+          ifelse(started.here & !ended.here, tripduration, NA),
+         duration.to.finish = 
+          ifelse(!started.here & ended.here, tripduration, NA)) %>%
   group_by(starttime) %>%
   summarize(median.trip.from.521 = 
               median_(duration.from.start),
@@ -100,11 +102,7 @@ hour_sums_432 <- station_432 %>%
          ended.here = (end.station.id == 432),
          subscriber = (usertype == "Subscriber"),
          customer = (usertype == "Customer")) %>%
-  mutate(duration.from.start = 
-          ifelse(started.here & !ended.here, tripduration, NA),
-         duration.to.finish = 
-          ifelse(!started.here & ended.here, tripduration, NA),
-         subscriber.started.here = 
+  mutate(subscriber.started.here = 
            (started.here & !ended.here & subscriber),
          subscriber.ended.here = 
            (!started.here & ended.here & subscriber),
@@ -112,6 +110,11 @@ hour_sums_432 <- station_432 %>%
            (started.here & !ended.here & subscriber),
          customer.ended.here = 
            (!started.here & ended.here & subscriber)) %>%
+  mutate_all(funs(ifelse(is.na(.), 0, .))) %>%
+  mutate(duration.from.start = 
+          ifelse(started.here & !ended.here, tripduration, NA),
+         duration.to.finish = 
+          ifelse(!started.here & ended.here, tripduration, NA)) %>%
   group_by(starttime) %>%
   summarize(median.trip.from.432 = 
               median_(duration.from.start),
@@ -131,6 +134,47 @@ hour_sums_432 <- station_432 %>%
               sum(!started.here & ended.here))
 ```
 
+```{r, cache=TRUE}
+hourly_station_data <- 
+  left_join(hour_sums_432, hour_sums_521, by ="starttime")
+```
+
+
+Prepare the Weather Data
+```{r, cache=TRUE}
+
+# Removing the extraneous variables
+Weather_NYC <- Weather_NYC %>%
+  select(-station,-drct,-p01i,-skyc1,
+         -skyc2,-skyc3,-skyc4, -skyl1,
+         -skyl2,-skyl2,-skyl3,-skyl4,-metar)
+```
+
+```{r, cache =TRUE}
+Weather_NYC <- Weather_NYC %>% 
+  mutate(valid = ymd_hms(valid)) %>%
+  filter(minute(valid)=="51")  %>%
+  mutate(valid = ceiling_date(valid, unit = "hour"),
+         Month=month(valid)) %>%
+  mutate( summer=ifelse(Month=="6"|Month=="7"|Month=="8",1,0),
+          spring=ifelse((Month=="3"|Month=="4"|Month=="5"),1,0),
+          winter=ifelse((Month=="1"|Month=="2"|Month=="12"),1,0),
+          fall=ifelse((Month=="9"|Month=="10"|Month=="11"),1,0),
+          day.of.week=wday(valid)) %>%
+  mutate(week.day=
+           ifelse(day.of.week > 1 & day.of.week < 7,TRUE,FALSE),
+         weekend.day=
+           ifelse(day.of.week == 1 | day.of.week == 7,TRUE,FALSE),
+         starttime = valid) %>% 
+  select(-valid)
+```
+
+```{r,cache=TRUE}
+bikes_weather_combined <- 
+  inner_join(Weather_NYC, hourly_station_data, by= "starttime" )
+```
+
 ```{r}
-hourly_station_data <- left_join()
+head(bikes_weather_combined)
+tbl_df(bikes_weather_combined[1,])
 ```
