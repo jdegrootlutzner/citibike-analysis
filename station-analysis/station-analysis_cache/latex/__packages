@@ -6,5 +6,7 @@ RMySQL
 lubridate
 ggmap
 readr
-bindrcpp
 chron
+lattice
+caret
+bindrcpp

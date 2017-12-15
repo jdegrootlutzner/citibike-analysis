@@ -18,6 +18,7 @@ require(lubridate)
 require(ggmap)
 require(readr)
 require(chron)
+require(caret)
 ```
 
 ```{r, cache=TRUE}
@@ -48,13 +49,13 @@ station_521$starttime <- mdy
 station_521$starttime[is.na(station_521$starttime)] <- f1[is.na(station_521$starttime)]
 ```
 
-```{r, cache= TRUE}
+```
 # took out rides that looped to the same station because these 
 # rides don't impact our prediction model
 median_ <- function(...) median(..., na.rm=T)
 
-# hourly sums of station 521
-hour_sums_521 <- station_521 %>% 
+# weekly sums of station 521
+weekly_sums_521 <- station_521 %>% 
   select(tripduration, starttime, start.station.id,
          end.station.id, usertype) %>%
   mutate(starttime = floor_date(starttime, "hour"),
@@ -87,17 +88,17 @@ hour_sums_521 <- station_521 %>%
             num.customers.started.521 =
               sum(customer.started.here),
             num.customers.ended.521 =
-              sum(customer.started.here),
+              sum(customer.ended.here),
             total.trips.started.521 =
               sum(started.here & !ended.here),
             total.trips.ended.521 =
               sum(!started.here & ended.here))
 
-# hourly sums for station 432
-hour_sums_432 <- station_432 %>% 
+# weekly sums for station 432
+weekly_sums_432 <- station_432 %>% 
   select(tripduration, starttime, start.station.id,
          end.station.id, usertype) %>%
-  mutate(starttime = floor_date(starttime, "hour"),
+  mutate(starttime = floor_date(starttime, "week"),
          started.here = (start.station.id == 432),
          ended.here = (end.station.id == 432),
          subscriber = (usertype == "Subscriber"),
@@ -127,27 +128,61 @@ hour_sums_432 <- station_432 %>%
             num.customers.started.432 =
               sum(customer.started.here),
             num.customers.ended.432 =
-              sum(customer.started.here),
+              sum(customer.ended.here),
             total.trips.started.432 =
               sum(started.here & !ended.here),
             total.trips.ended.432 =
               sum(!started.here & ended.here))
-```
-
-```{r, cache=TRUE}
 hourly_station_data <- 
   left_join(hour_sums_432, hour_sums_521, by ="starttime")
 ```
 
 
-Prepare the Weather Data
-```{r, cache=TRUE}
+#Hourly Sums
+```{r, cache= TRUE}
 
-# Removing the extraneous variables
+# took out rides that looped to the same station because these 
+# rides don't impact our prediction model
+median_ <- function(...) median(..., na.rm=T)
+
+# hourly sums of station 521
+hourly_sums_521 <- station_521 %>% 
+  select( starttime, start.station.id,
+         end.station.id) %>%
+  mutate(starttime = floor_date(starttime, "hour"),
+         started.here = (start.station.id == 521),
+         ended.here = (end.station.id == 521)) %>%
+  group_by(starttime) %>%
+  summarize(total.trips.started.521 =
+              sum(started.here & !ended.here),
+            total.trips.ended.521 =
+              sum(!started.here & ended.here)) %>%
+  mutate(net.change.521 = 
+  total.trips.started.521 -total.trips.ended.521 )
+
+# hourly sums for station 432
+hourly_sums_432 <- station_432 %>% 
+  select(starttime, start.station.id,
+         end.station.id) %>%
+  mutate(starttime = floor_date(starttime, "hour"),
+         started.here = (start.station.id == 432),
+         ended.here = (end.station.id == 432)) %>%
+  group_by(starttime) %>%
+  summarize(total.trips.started.432 =
+              sum(started.here & !ended.here),
+            total.trips.ended.432 =
+              sum(!started.here & ended.here)) %>%
+  mutate(net.change.432 = 
+  total.trips.started.432 -total.trips.ended.432 )
+```
+
+
+
+Prepare the Weather Data
+```{r,cache=TRUE}
+# Choosing important variables
 Weather_NYC <- Weather_NYC %>%
-  select(-station,-drct,-p01i,-skyc1,
-         -skyc2,-skyc3,-skyc4, -skyl1,
-         -skyl2,-skyl2,-skyl3,-skyl4,-metar)
+  select(valid, tmpf, dwpf, relh, vsby)
 ```
 
 ```{r, cache =TRUE}
@@ -160,21 +195,112 @@ Weather_NYC <- Weather_NYC %>%
           spring=ifelse((Month=="3"|Month=="4"|Month=="5"),1,0),
           winter=ifelse((Month=="1"|Month=="2"|Month=="12"),1,0),
           fall=ifelse((Month=="9"|Month=="10"|Month=="11"),1,0),
-          day.of.week=wday(valid)) %>%
+          day.of.week=wday(valid),
+          hour = hour(valid)) %>%
   mutate(week.day=
            ifelse(day.of.week > 1 & day.of.week < 7,TRUE,FALSE),
          weekend.day=
            ifelse(day.of.week == 1 | day.of.week == 7,TRUE,FALSE),
+         EarlyMorning=
+           ifelse(hour=="0"|hour=="1"|hour=="2"|hour=="3"|hour=="4"|hour=="5"|hour=="6",1,0),
+         Commuting=
+           ifelse((hour=="7"|hour=="8"|hour=="9"),1,0),
+         DayTime=
+           ifelse((hour=="10"|hour=="11"|
+              hour=="12"|hour=="13"|hour=="14"|hour=="15"),1,0),
+         Evening=ifelse((hour=="16"|hour=="17"|
+                           hour=="18"|hour=="19"),1,0),
+         Night=ifelse((hour== "20"|
+                         hour=="21"|hour=="22"|hour=="23"),1,0),
          starttime = valid) %>% 
-  select(-valid)
+  select(-valid, -hour, -Month, -day.of.week)
+
 ```
 
 ```{r,cache=TRUE}
-bikes_weather_combined <- 
-  inner_join(Weather_NYC, hourly_station_data, by= "starttime" )
+station_432_combined <- hourly_sums_432 %>%
+  select(starttime, net.change.432 ) %>%
+  inner_join(Weather_NYC, by= "starttime" )
 ```
 
-```{r}
-head(bikes_weather_combined)
-tbl_df(bikes_weather_combined[1,])
+```{r,cache=TRUE}
+station_521_combined <- hourly_sums_521 %>%
+  select(starttime, net.change.521 ) %>%
+  inner_join(Weather_NYC, by= "starttime" )
+```
+
+```{r,cache=TRUE}
+print.data.frame(head(station_521_combined,1))
+dim(station_521_combined)
+print.data.frame(head(station_432_combined,1))
+dim(station_432_combined)
+```
+
+```{r, cache=TRUE}
+nrow(na.omit(station_521_combined))
+```
+
+```{r, cache=TRUE}
+station_521_combined <- station_521_combined[complete.cases(station_521_combined),]
+```
+
+```{r,cache = TRUE}
+station_521_combined <- station_521_combined %>%
+  select(-starttime)
+print.data.frame(head(station_521_combined,1))
+dim(station_521_combined)
+```
+
+```{r, cache=TRUE}
+set.seed(4747)
+inTrain <- 
+  createDataPartition(station_521_combined$net.change.521,
+                      p = 0.7, list=FALSE)
+training.521 <- station_521_combined[inTrain, ]
+testing.521 <- station_521_combined[-inTrain,]
+```
+
+
+# Random Forest
+Random Forest
+
+How many trees is enough?
+```{r,cache=TRUE}
+#results <- data.frame()
+#for(n in seq(from= 50, to = 750, by= 200)){
+set.seed(47)
+rf.model <- train(net.change.521~.,
+                  data = training.521,
+                  method = "rf",
+                  trControl=trainControl(method="oob"),
+                  ntree = 200,
+                  tuneGrid=data.frame(mtry=6))
+prediction <- predict(rf.model, testing.521)
+#cm <- confusionMatrix(prediction, testing.521$)
+#results <- rbind(results , cm$overall)
+#}
+#results
+
+RMSE(prediction, testing.521$net.change.521)
+
+```
+
+```{r, cache = TRUE}
+actual_positive_change <- (testing.521$net.change.521 > 0)
+pred_positive_change <- (prediction > 0)
+confusionMatrix(pred_positive_change, actual_positive_change)
+all_true <- (prediction < -10000)
+confusionMatrix(all_true, actual_positive_change)
+```
+
+```{r, cache =TRUE}
+head(prediction)
+head(testing.521$net.change.521)
+mean(prediction)
+```
+
+#SVM
+```{r, cache = TRUE
+training.521 <- training.521 %>%
+  mutate(net.change.521 = net.change.521 > 0) %>%
 ```
