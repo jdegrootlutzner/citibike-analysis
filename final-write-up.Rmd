@@ -1,6 +1,6 @@
 ---
 title: "Citi Bikes Analysis and Bike Demand Prediction"
-author: "Julian DeGroot-Lutzner & Adi Salwan"
+author: "Julian DeGroot-Lutzner & Vikramaditya Salwan"
 date: "12/14/2017"
 output: pdf_document
 ---
