@@ -49,8 +49,12 @@ station_521$starttime <- mdy
 station_521$starttime[is.na(station_521$starttime)] <- f1[is.na(station_521$starttime)]
 ```
 
+We wrote code to wrangle the data so that it is ready to make interesting graphs about each station but we never had time to make the graphs.
 ```
-# took out rides that looped to the same station because these 
+# Here is code that could be used to make graphs and understand 
+# the data at hand 
+
+# We took out rides that looped to the same station because these 
 # rides don't impact our prediction model
 median_ <- function(...) median(..., na.rm=T)
 
@@ -136,6 +140,97 @@ weekly_sums_432 <- station_432 %>%
 hourly_station_data <- 
   left_join(hour_sums_432, hour_sums_521, by ="starttime")
 ```
+```
+# Here is code that could be used to make graphs and understand 
+# the data at hand 
+
+# We took out rides that looped to the same station because these 
+# rides don't impact our prediction model
+median_ <- function(...) median(..., na.rm=T)
+
+# weekly sums of station 521
+weekly_sums_521 <- station_521 %>% 
+  select(tripduration, starttime, start.station.id,
+         end.station.id, usertype) %>%
+  mutate(starttime = floor_date(starttime, "hour"),
+         started.here = (start.station.id == 521),
+         ended.here = (end.station.id == 521),
+         subscriber = (usertype == "Subscriber"),
+         customer = (usertype == "Customer")) %>%
+  mutate(subscriber.started.here = 
+           (started.here & !ended.here & subscriber),
+         subscriber.ended.here = 
+           (!started.here & ended.here & subscriber),
+         customer.started.here = 
+           (started.here & !ended.here & subscriber),
+         customer.ended.here = 
+           (!started.here & ended.here & subscriber)) %>%
+  mutate_all(funs(ifelse(is.na(.), 0, .))) %>%
+  mutate(duration.from.start = 
+          ifelse(started.here & !ended.here, tripduration, NA),
+         duration.to.finish = 
+          ifelse(!started.here & ended.here, tripduration, NA)) %>%
+  group_by(starttime) %>%
+  summarize(median.trip.from.521 = 
+              median_(duration.from.start),
+            median.trip.to.521 = 
+              median_(duration.to.finish),
+            num.subscribers.started.521 =
+              sum(subscriber.started.here),
+            num.subscribers.ended.521 =
+              sum(subscriber.ended.here),
+            num.customers.started.521 =
+              sum(customer.started.here),
+            num.customers.ended.521 =
+              sum(customer.ended.here),
+            total.trips.started.521 =
+              sum(started.here & !ended.here),
+            total.trips.ended.521 =
+              sum(!started.here & ended.here))
+
+# weekly sums for station 432
+weekly_sums_432 <- station_432 %>% 
+  select(tripduration, starttime, start.station.id,
+         end.station.id, usertype) %>%
+  mutate(starttime = floor_date(starttime, "week"),
+         started.here = (start.station.id == 432),
+         ended.here = (end.station.id == 432),
+         subscriber = (usertype == "Subscriber"),
+         customer = (usertype == "Customer")) %>%
+  mutate(subscriber.started.here = 
+           (started.here & !ended.here & subscriber),
+         subscriber.ended.here = 
+           (!started.here & ended.here & subscriber),
+         customer.started.here = 
+           (started.here & !ended.here & subscriber),
+         customer.ended.here = 
+           (!started.here & ended.here & subscriber)) %>%
+  mutate_all(funs(ifelse(is.na(.), 0, .))) %>%
+  mutate(duration.from.start = 
+          ifelse(started.here & !ended.here, tripduration, NA),
+         duration.to.finish = 
+          ifelse(!started.here & ended.here, tripduration, NA)) %>%
+  group_by(starttime) %>%
+  summarize(median.trip.from.432 = 
+              median_(duration.from.start),
+            median.trip.to.432 = 
+              median_(duration.to.finish),
+            num.subscribers.started.432 =
+              sum(subscriber.started.here),
+            num.subscribers.ended.432 =
+              sum(subscriber.ended.here),
+            num.customers.started.432 =
+              sum(customer.started.here),
+            num.customers.ended.432 =
+              sum(customer.ended.here),
+            total.trips.started.432 =
+              sum(started.here & !ended.here),
+            total.trips.ended.432 =
+              sum(!started.here & ended.here))
+hourly_station_data <- 
+  left_join(hour_sums_432, hour_sums_521, by ="starttime")
+```
+
 
 
 #Hourly Sums
@@ -251,7 +346,7 @@ print.data.frame(head(station_521_combined,1))
 dim(station_521_combined)
 ```
 
-```{r, cache=TRUE}
+```{r, cache=TRUE, echo= FALSE}
 set.seed(4747)
 inTrain <- 
   createDataPartition(station_521_combined$net.change.521,

@@ -24,9 +24,6 @@ require(caret)
 randomsample <- read_csv("data/randomsample.csv")
 
 ```
-## R Markdown
- <http://rmarkdown.rstudio.com>. **Knit** 
- 
  
  
 ## Background and Motivation
@@ -284,7 +281,7 @@ ggmap(mymap) +  geom_point(data = start_sums,
 
 The one red dot could be do to an outlier and is worth investigating more but we chose to go in a different direction.
 
-At this point we moved in to our investigation of if a station was a net importer or exporter. To figure this out we calculated the sums of the number of trips in and out of a station for each station. We then found the difference between the start and the finish or the net change. The difference (start - finish) is positive if more bikes start at a station than end there, and is negative if more bikes end at a station than start there. **I confused myself and probably should have rethought about the change as in and out and then I would have gotten finish - start or in - out. Anyways, please deal with this confusion**
+At this point we moved in to our investigation of if a station was a net importer or exporter. To figure this out we calculated the sums of the number of trips in and out of a station for each station. We then found the difference between the start and the finish or the net change. The difference (start - finish) is positive if more bikes start at a station than end there, and is negative if more bikes end at a station than start there. *I confused myself and probably should have rethought about the change as in and out and then I would have gotten finish - start or in - out. Anyways, please deal with this confusion*
 
 We normalized the difference by dividing it by the total station trips and we filtered the stations to only look at the top ten percent of the most popular stations (the stations with the most bike rides). Looking back at our metric, we could have adjusted for how long the bike station has been around and looked at how the usage has changed overttime. For example, did extreme popularity of one station spark a new station near it that helped provide more supply of bikes? That's a question we should look at in the future.
 
@@ -333,7 +330,7 @@ biggest_differences %>%
 
 ```
 
-Here is a list of the top importer - more bikes **end** at these stations than start in these stations. They have excess bikes.
+Here is a list of the top importers - more bikes **end** at these stations than start in these stations. They have excess bikes.
 
 ```{r, cache=TRUE, echo=FALSE}
 smallest_differences <- joined_data %>% 
@@ -388,7 +385,195 @@ ggmap(mymap) +
 Let's move on to our model.
 
 ## Building a Model
+
+```{r, cache=TRUE, echo=FALSE}
+station_432 <- read.csv("data/station-432.csv")
+station_521 <- read.csv("data/station-521.csv")
+Weather_NYC <- read_csv("data/Weather_NYC.csv")
+```
+
+We went back to our SQL server and now pulled a new subsample: all rides that went to and from our selected stations. At this point we will now combine the data from Citibikes and [historic Weather Data](https://mesonet.agron.iastate.edu/request/download.phtml?network=NY_ASOS#) to create predictive models for stations changes. We combined the data by hour so that each hour has the 
+
+```{r, cache= TRUE, echo= FALSE}
+# Parsing all the start times into one format
+mdy <- mdy_hms(station_432$starttime) 
+ymd <- ymd_hms(station_432$starttime) 
+f1 <- mdy_hm(station_432$starttime)
+mdy[is.na(mdy)] <- ymd[is.na(mdy)] 
+station_432$starttime <- mdy
+station_432$starttime[is.na(station_432$starttime)] <- f1[is.na(station_432$starttime)]
+
+# Parsing all the start times into one format
+mdy <- mdy_hms(station_521$starttime) 
+ymd <- ymd_hms(station_521$starttime) 
+f1 <- mdy_hm(station_521$starttime)
+mdy[is.na(mdy)] <- ymd[is.na(mdy)] 
+station_521$starttime <- mdy
+station_521$starttime[is.na(station_521$starttime)] <- f1[is.na(station_521$starttime)]
+```
+
+We wrote code to wrangle the data so that it is ready to make interesting graphs about each station but we never had time to make the graphs. The code can be found in station-analysis.Rmd.
+
+```{r, cache= TRUE, echo=FALSE}
+
+# took out rides that looped to the same station because these 
+# rides don't impact our prediction model
+median_ <- function(...) median(..., na.rm=T)
+
+# hourly sums of station 521
+hourly_sums_521 <- station_521 %>% 
+  select( starttime, start.station.id,
+         end.station.id) %>%
+  mutate(starttime = floor_date(starttime, "hour"),
+         started.here = (start.station.id == 521),
+         ended.here = (end.station.id == 521)) %>%
+  group_by(starttime) %>%
+  summarize(total.trips.started.521 =
+              sum(started.here & !ended.here),
+            total.trips.ended.521 =
+              sum(!started.here & ended.here)) %>%
+  mutate(net.change.521 = 
+  total.trips.started.521 -total.trips.ended.521 )
+
+# hourly sums for station 432
+hourly_sums_432 <- station_432 %>% 
+  select(starttime, start.station.id,
+         end.station.id) %>%
+  mutate(starttime = floor_date(starttime, "hour"),
+         started.here = (start.station.id == 432),
+         ended.here = (end.station.id == 432)) %>%
+  group_by(starttime) %>%
+  summarize(total.trips.started.432 =
+              sum(started.here & !ended.here),
+            total.trips.ended.432 =
+              sum(!started.here & ended.here)) %>%
+  mutate(net.change.432 = 
+  total.trips.started.432 -total.trips.ended.432 )
+```
+
+```{r,cache=TRUE}
+# Choosing important variables
+Weather_NYC <- Weather_NYC %>%
+  select(valid, tmpf, dwpf, relh, vsby)
+```
 Rationale for Choosing the weather data variables:
+The variables relating to the weather data chosen are air temperature in Fahrenheit(tmpf), Dew Point Temperature in Fahrenheit (dwpf), Relative Humidity in percentage (relh), and visibility in miles (vsby). We chose these variables because each of these variables can have an impact on a biker's decision to choose or not to choose to bike and can significantly affect bike usage. We chose these variables to build a preliminary model and make predictions based off the model. The other variables like wind direction in degrees from north, sky level coverages, sky level altitudes, and wind gust had some missing observations. We believe that these variables don't affect bike usage much and not including them would not affect the model.
 
-The variables relating to the weather data chosen are air temperature in Fahrenheit(tmpf), Dew Point Temperature in Fahrenheit (dwpf), Relative Humidity in percentage (relh), Wind Speed in knots (sknt), Pressure altimeter in inches (alti), and visibility in miles (vsby). We chose these variables because each of these variables can have an impact on a biker's decision to choose or not to choose to bike and can significantly affect bike usage. We chose these variables to build a preliminary model and make predictions based off the model. The other variables like wind direction in degrees from north, sky level coverages, sky level altitudes, and wind gust had some missing observations. We believe that these variables don't affect bike usage much and not including them would not affect the model. 
+```{r, cache =TRUE, echo=FALSE}
+Weather_NYC <- Weather_NYC %>% 
+  mutate(valid = ymd_hms(valid)) %>%
+  filter(minute(valid)=="51")  %>%
+  mutate(valid = ceiling_date(valid, unit = "hour"),
+         Month=month(valid)) %>%
+  mutate( summer=ifelse(Month=="6"|Month=="7"|Month=="8",1,0),
+          spring=ifelse((Month=="3"|Month=="4"|Month=="5"),1,0),
+          winter=ifelse((Month=="1"|Month=="2"|Month=="12"),1,0),
+          fall=ifelse((Month=="9"|Month=="10"|Month=="11"),1,0),
+          day.of.week=wday(valid),
+          hour = hour(valid)) %>%
+  mutate(week.day=
+           ifelse(day.of.week > 1 & day.of.week < 7,TRUE,FALSE),
+         weekend.day=
+           ifelse(day.of.week == 1 | day.of.week == 7,TRUE,FALSE),
+         EarlyMorning=
+           ifelse(hour=="0"|hour=="1"|hour=="2"|hour=="3"|hour=="4"|hour=="5"|hour=="6",1,0),
+         Commuting=
+           ifelse((hour=="7"|hour=="8"|hour=="9"),1,0),
+         DayTime=
+           ifelse((hour=="10"|hour=="11"|
+              hour=="12"|hour=="13"|hour=="14"|hour=="15"),1,0),
+         Evening=ifelse((hour=="16"|hour=="17"|
+                           hour=="18"|hour=="19"),1,0),
+         Night=ifelse((hour== "20"|
+                         hour=="21"|hour=="22"|hour=="23"),1,0),
+         starttime = valid) %>% 
+  select(-valid, -hour, -Month, -day.of.week)
 
+```
+Based on the graphs we made for the original exploratory analysis we decided to group hour into categories of early morning, morning commute, daytime, and evening commute, and night. 
+
+We also engineered variables for weekday vs. weekend and all of the seasons.
+
+```{r,cache=TRUE, echo=FALSE}
+# combine weather station and weather data
+station_432_combined <- hourly_sums_432 %>%
+  select(starttime, net.change.432 ) %>%
+  inner_join(Weather_NYC, by= "starttime" )
+
+# combine weather station and weather data
+station_521_combined <- hourly_sums_521 %>%
+  select(starttime, net.change.521 ) %>%
+  inner_join(Weather_NYC, by= "starttime" )
+
+# only a few rows were missing data so we removed them
+station_521_combined <- station_521_combined[complete.cases(station_521_combined),] %>%
+  select(-starttime)
+
+station_432_combined <- station_432_combined[complete.cases(station_432_combined),] %>%
+  select(-starttime)
+```
+A small part of the weather data was missing fields - roughly 1% - so we decided to remove these rows. 
+
+### Random Forest Regression and Classification
+
+```{r, cache=TRUE, echo= FALSE}
+set.seed(4747)
+inTrain <- 
+  createDataPartition(station_521_combined$net.change.521,
+                      p = 0.7, list=FALSE)
+training.521 <- station_521_combined[inTrain, ]
+testing.521 <- station_521_combined[-inTrain,]
+
+set.seed(4747)
+rf.model <- train(net.change.521~.,
+                  data = training.521,
+                  method = "rf",
+                  trControl=trainControl(method="oob"),
+                  ntree = 200,
+                  tuneGrid=data.frame(mtry=6))
+prediction <- predict(rf.model, testing.521)
+
+RMSE(prediction, testing.521$net.change.521)
+```
+16.86 is too high of a Root Mean Squared Error to be effective but just for fun let's look at how accurate the model was at classifying if the difference was positive or negative (export or import).
+```{r, cache = TRUE, echo=FALSE}
+actual_positive_change <- (testing.521$net.change.521 > 0)
+pred_positive_change <- (prediction > 0)
+confusionMatrix(pred_positive_change, actual_positive_change)
+```
+Does our model do better than predicting all of the differences as negative ?
+```{r, cache = TRUE, echo=FALSE}
+all_true <- (prediction < -10000)
+confusionMatrix(all_true, actual_positive_change)
+```
+Our model did do better than predicting all of the differences as positive. But without an accurate number this does not help us too much. Let's compare this result to SVM .
+
+### SVM Linear Classification 
+
+```{r, cache = TRUE, echo = FALSE}
+station.521.svm<- station_521_combined %>%
+  mutate(net.change.521 = ifelse(net.change.521 > 0, "P","N")) 
+
+set.seed(4747)
+inTrain <- 
+  createDataPartition(station.521.svm$net.change.521,
+                      p = 0.7, list=FALSE)
+training.svm.521 <- station.521.svm[inTrain, ]
+testing.svm.521 <- station.521.svm[-inTrain,]
+head(training.svm.521)
+head(testing.svm.521)
+set.seed(47)
+svm.linear.model <- train(net.change.521~., data = training.svm.521, method="svmLinear", 
+                 trControl = trainControl(method="cv"),
+                 tuneGrid= expand.grid(C= (0.1)),
+                 preProcess = c("center", "scale"))
+
+svm.linear.pred <- predict(svm.linear.model, testing.svm.521)
+
+confusionMatrix(svm.linear.pred, testing.svm.521$net.change.521)
+
+```
+
+## Final Remarks
+
+Our last modeling step was rushed. We did not spend the time graphing the data to better visualize how weather interacts with bike demand. Additionally, we did not spend enough time choosing variables and optimizing the models. Building models on large sets of data is time consuming! However, we still wanted to incorporate it to show how the data analysis life cycle might work. **We started with a very large dataset, then made a random sample to learn about the overall data. From the randomized sample we discovered that we wanted to look into a new subset of data (on stations we thought were of interest). We began to build a model on this data but found that it was not very effective at predicting our desired information (when to move bikes from one station to another).** The next step would be to go back to the drawing board and come up with a better way to approach our orignal goal. Once our model works we could scale it up to the larger dataset and then finish the cycle of the data analysis!
