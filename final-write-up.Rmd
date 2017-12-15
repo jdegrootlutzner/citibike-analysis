@@ -1,5 +1,5 @@
 ---
-title: "final-write-up"
+title: "Citi Bikes Analysis and Bike Demand Prediction"
 author: "Julian DeGroot-Lutzner & Adi Salwan"
 date: "12/14/2017"
 output: pdf_document
@@ -20,21 +20,48 @@ require(readr)
 require(chron)
 require(caret)
 ```
-
-## R Markdown
- see <http://rmarkdown.rstudio.com>. **Knit** 
- 
- 
- 
-# Background and Motivation
-
-# Working with Big Data in R
-
-# Understanding the Random Sample
-## Exploratory Analyis
-```{r}
+```{r, include=FALSE, cache = TRUE}
 randomsample <- read_csv("data/randomsample.csv")
+
 ```
+## R Markdown
+ <http://rmarkdown.rstudio.com>. **Knit** 
+ 
+ 
+ 
+## Background and Motivation
+
+Our project is inspired by the [Kaggle bike sharing demand competition](https://www.kaggle.com/c/bike-sharing-demand#description). Bike sharing is a service that has become popular within the last few years in many cities across the United States. Bikes are checked in and out of a network of stations that keep track of each ride, its start and end time, its start/end location, as well as information about subscribers such as gender and age. The Kaggle competition challenged users to predict the hourly bike usage of a test dataset by building a model on a training set combing hourly weather data with hourly bike share usage in Washington, DC.
+
+We planned to first visualize and understand the data and then try to find if there are any inconsistencies in bike stations traffic. Is there a bike station that people take bikes from but do not take bikes back to? If there was an bike station that is a net exporter - meaning it has an excess in demand of bikes - we wanted to make recomendations on how often CitiBikes should manually transport bikes back to the station.
+
+Instead of using the Kaggle data, we wanted to wrangle bike sharing data from a different city's bike share dataset so that we could get familiar with the process of preparing a dataset for analysis. We decided on the [Citibikes bike sharing dataset](https://www.citibikenyc.com/system-data) from New York City because there is data available on every ride from January 1st, 2013 to September 31, 2017. However, the dataset is very large, over 40 million observations, and the complete set cannot be ran in R. Our new goal became learning how to work with Big Data in R. 
+
+
+## Working with Big Data in R
+Big Data in R is when the data cannot fit in to memory. Instead, we stored the data in a SQL database  We based our work process off of the [Working with Big Data in R webinar.](https://www.rstudio.com/resources/webinars/working-with-big-data-in-r/) The webinar 
+
+
+
+The first difficulty in the project was uploading the Citibikes data to a SQL database. We worked on Jo Hardin's sever at the Pomona math department using MySQL. Since the server is within the Pomona network so we needed to navigate both the Pomona ITS and Department firewall. Additonally, our limited permissions on our personal accounts made it difficult to update needed packages within R. These limitations caused many problems 
+
+Citibikes publishes a zip file for each month of data so there were over 50 seperate files to download. 
+```
+#!/bin/bash
+# A script to automate the download of all the Citibikes data
+
+IFS=$'\n'       # make newlines the only separator
+set -f          # disable globbing
+for link in $(cat < "$1"); do
+    wget "$link"
+done
+```
+
+
+## Understanding the Random Sample
+
+## Exploratory Analyis
+
 
 
 
