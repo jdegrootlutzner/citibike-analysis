@@ -1,0 +1,12 @@
+base
+dplyr
+ggplot2
+DBI
+RMySQL
+lubridate
+ggmap
+readr
+chron
+lattice
+caret
+bindrcpp

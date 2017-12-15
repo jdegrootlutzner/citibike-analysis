@@ -39,30 +39,386 @@ Instead of using the Kaggle data, we wanted to wrangle bike sharing data from a 
 
 
 ## Working with Big Data in R
-Big Data in R is when the data cannot fit in to memory. Instead, we stored the data in a SQL database  We based our work process off of the [Working with Big Data in R webinar.](https://www.rstudio.com/resources/webinars/working-with-big-data-in-r/) The webinar 
 
+Big Data in R is when the data cannot fit in to memory. Instead, we stored the data in a SQL database and received the data using 'RMySQL' and 'dplyr.' We based our work process off of the [Working with Big Data in R webinar.](https://www.rstudio.com/resources/webinars/working-with-big-data-in-r/). The life cycle of a big data analysis project usually involves five parts. Subset (extract data to explore and work with), clarify (become familiar with the data and template a solution), develop (create a working model), productize (automate and integrate), and publish. In other words, first work with a smaller sample, then scale up the work to a larger dataset.
 
+We worked on Jo Hardin's sever at the Pomona math department using MySQL. Since the server is within the Pomona network we needed to navigate both the Pomona ITS and Department firewall. Additonally, our limited permissions on our personal accounts made it difficult to update needed packages within R. These limitations forced us to learn, adapt, and change our project as needed.
 
-The first difficulty in the project was uploading the Citibikes data to a SQL database. We worked on Jo Hardin's sever at the Pomona math department using MySQL. Since the server is within the Pomona network so we needed to navigate both the Pomona ITS and Department firewall. Additonally, our limited permissions on our personal accounts made it difficult to update needed packages within R. These limitations caused many problems 
+The first difficulty in the project was uploading the Citibikes data to a SQL database. Citibikes publishes a zip file for each month of data so there were over 50 seperate files to download. We wrote scripts to download, alter, and write csv files from the the Citibikes server, to our server, and then onto the MySQL database. The difficulties served as a learning experience as we developed better skills in the command line as well as in writing Shell, Python, and SQL code. You can see some of this code in the setup-code folder. Unfortunately, as of now our complete process is not reproducible by a single code but we can come back and add more explanation on how to use this code later.
 
-Citibikes publishes a zip file for each month of data so there were over 50 seperate files to download. 
-```
-#!/bin/bash
-# A script to automate the download of all the Citibikes data
-
-IFS=$'\n'       # make newlines the only separator
-set -f          # disable globbing
-for link in $(cat < "$1"); do
-    wget "$link"
-done
-```
-
+Dplyr allows integration with many different databases. We originally tried running code on the complete >40 million dataset. However, the SQL queries took too long for us to create a reasonable project within our relatively short time frame. For example, some queries would take more than a day. In the future we could use other big data techniques like MapReduce to work more quickly. Instead we used the aforementioned big data work schedule of subsetting and scaling. First we took a random sample of 500,000 observations - approxiametly 1 % - from the original dataset.
 
 ## Understanding the Random Sample
 
-## Exploratory Analyis
+### Exploratory Graphs on Ride Use
 
+We wrote a lot of code, but we decided to use as little code as possible in our write up so that it is easier to read. If you're interested in learning how to make cool graphs like these please download our Rmd file and take a look for yourself. 
 
+Here are some graphs that should help you get an understanding of CitiBike usage. After the graphs is a write up about some of the takeaways we found.
 
+```{r, cache =TRUE, echo=FALSE}
+# Parsing all the start times into one format
+mdy <- mdy_hms(randomsample$starttime) 
+ymd <- ymd_hms(randomsample$starttime) 
+f1 <- mdy_hm(randomsample$starttime)
+mdy[is.na(mdy)] <- ymd[is.na(mdy)] # some dates are ambiguous, here we give 
+randomsample$starttime <- mdy
+randomsample$starttime[is.na(randomsample$starttime)] <- f1[is.na(randomsample$starttime)]
+
+# Parsing all the end times into one format 
+mdy <- mdy_hms(randomsample$stoptime) 
+ymd <- ymd_hms(randomsample$stoptime) 
+f1 <- mdy_hm(randomsample$stoptime)
+mdy[is.na(mdy)] <- ymd[is.na(mdy)] 
+randomsample$stoptime <- mdy
+randomsample$stoptime[is.na(randomsample$stoptime)] <- f1[is.na(randomsample$stoptime)]
+
+# Flooring the Hour
+randomsample$starttime <- floor_date(randomsample$starttime,unit = "hour")
+# Trying to Find Day of the Week
+randomsample <- randomsample %>%
+  mutate(WeekDay=wday(as.Date(starttime), label=TRUE)) %>%
+  mutate(WorkingDay=ifelse((WeekDay=="Mon"|WeekDay=="Tues"|WeekDay=="Wed"|WeekDay=="Thurs"|WeekDay=="Fri"),"Yes","No")) 
+
+# Trying to find the holidays - Not quite working. Need to do this manually!
+randomsample <- randomsample %>%
+  mutate(holiday=is.weekend(starttime))
+
+# Joining the weather data and the random sample
+combined <- randomsample
+
+# Number of Stations Every Year
+rs <- randomsample %>%
+  mutate(year=year(starttime),monyear=substr(starttime,1,7)) %>%
+  group_by(year,usertype,monyear) %>%
+  summarise(stations=n_distinct(start.station.id),rides=n())
+combined$WorkingDay[combined$WorkingDay=="Yes"]<- "Weekday"
+combined$WorkingDay[combined$WorkingDay=="No"]<- "Weekend"
+
+# Exploratory Analysis -
+combined1 <- combined%>% 
+  mutate(year=year(starttime),
+         month=month(starttime),
+         monyear=substr(starttime,1,7)) %>%
+  group_by(monyear,year)%>%
+  summarise(usage=n())
+
+combined1$year <- as.factor(combined1$year)
+
+# Graph to See the Monthly Usage
+ggplot(combined1,aes(x=monyear,y=usage,fill=year))+
+  geom_bar(stat="identity")+ 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  ggtitle("Bike Usage in Different Months (July 2013 to September 2017)")+
+  ylab("Number of Bike Rides")+
+  xlab("Month and Year")
+
+# Wrangling the data
+combined2 <-  combined%>% 
+  mutate(year=year(starttime),
+         week=week(starttime),
+         monyear=substr(starttime,1,7)) %>%
+  group_by(week,year)%>%
+  summarise(usage=n(),MedianDuration=median(tripduration)) %>%
+  mutate(wy=paste(week,"-",year)) %>%
+  filter(year==2016) %>%
+  arrange(year)
+
+# Graph to See the Usage in 2016
+ggplot(combined2,
+       aes(x=week,
+           y=usage,
+           fill=MedianDuration))+
+  geom_bar(stat="identity")+
+  theme(axis.text.x = 
+          element_text(angle = 90, hjust = 1))+
+  ggtitle("Weekly Bike Rides in 2016")+ylab("Usage")+xlab("Week")
+
+combined4 <- combined%>% 
+  mutate(year=year(starttime),
+         month=month(starttime),
+         hour=hour(starttime)) %>%
+  filter(!is.na(usertype))%>%
+  group_by(hour,gender,usertype,WeekDay)%>%
+  summarise(usage=n(),MedianDuration=median(tripduration))
+# The Number of Rides for every hour 
+
+#Graph for Bike Usage on Different Day
+ggplot(combined4,aes(x=hour,y=usage,fill=WeekDay))+
+  geom_bar(stat="identity")+
+  facet_grid(~WeekDay)+
+  xlab("Hour of the Day")+
+  ylab("Number of Bike Rides")+
+  ggtitle("Bike Usage on Different Days")
+
+combined7 <- combined%>% 
+  mutate(year=year(starttime),month=month(starttime),hour=hour(starttime)) %>%
+  filter(!is.na(usertype))%>%
+  group_by(hour,gender,usertype,WorkingDay)%>%
+  summarise(usage=n(),MedianDuration=median(tripduration))
+# The Number of Rides for every hour - 
+
+ggplot(combined7,aes(x=hour,y=usage,fill=WorkingDay))+
+  geom_bar(stat="identity")+
+  facet_grid(~WorkingDay)+
+  scale_fill_manual(values=c("orange", "lightgreen"))+
+  xlab("Hour of the Day")+
+  ylab("Number of Bike Rides")+
+  ggtitle("Bike Usage on Weekdays versus Weekends")
+
+# Making Different Levels for the Time of the Day
+combined4 <- combined4 %>%
+  mutate(EarlyMorning=ifelse(hour=="3"|hour=="4"|hour=="5"|hour=="6",1,0)) %>%
+  mutate(Commuting=ifelse((hour=="7"|hour=="8"|hour=="9"),1,0)) %>%
+  mutate(DayTime=ifelse((hour=="10"|hour=="11"|hour=="12"|hour=="13"|hour=="14"|hour=="15"),1,0)) %>%
+  mutate(Evening=ifelse((hour=="16"|hour=="17"|hour=="18"|hour=="19"|hour=="20"),1,0)) %>%
+  mutate(Night=ifelse((hour=="21"|hour=="22"|hour=="23"|hour=="0"|hour=="1"|hour=="2"),1,0))
+
+combined5 <- combined%>% 
+    filter(!is.na(birth.year)) %>%
+  mutate(year=year(starttime),
+         month=month(starttime),
+         monyear=substr(starttime,1,7),
+         age = 2017-birth.year) %>%
+  group_by(monyear,year,age,usertype,gender)%>%
+  summarise(usage=n())%>%
+  filter(age<100,gender!=0)
+
+combined5$gender <- as.factor(combined5$gender)
+
+ggplot(combined5,aes(x=age,y=usage,fill=gender))+
+  geom_bar(stat="identity")+facet_grid(~year)+
+  ggtitle("Yearly Bike Usage by Age and Gender")+
+  ylab("Number of Bike Rides")+
+  xlab("Age")+
+  scale_fill_manual(values=c("skyblue", "lightgreen"))+
+  geom_vline(xintercept = 75,alpha=0.5)+
+  geom_vline(xintercept = 25,alpha=0.5)
+
+ggplot(combined5,aes(x=year,y=usage,fill=gender))+
+  geom_bar(stat="identity")+
+  theme(axis.text.x = 
+          element_text(angle = 90, hjust = 1))+
+  facet_grid(~gender)+
+  ggtitle("Yearly Bike Usage by Gender")+
+  ylab("Number of Bike Rides")+
+  xlab("Year")+
+  scale_fill_manual(values=c("skyblue", "lightpink"))
+```
+
+Based on a preliminary exploratory analysis the following insights were found which could be useful for Citi Bikes: 
+
+1) It was found that bike usage for both females and males has increased each year since the initiation of this bike sharing project in May 2013 and since the data became available in July 2013. After the missing observations for gender were removed, it was found that bikes are used predominantly by males. We believe this trend is unexpected and needs to be corrected. We posit that female prefer walking, which is why the bike usage for females is not very high as compared to bike usage for males. The 2017 data is only available till September, which is why when compared to 2016 it shows a decline.
+
+2) It was found that bike usage has increased the most for the 25-50 years age group. The bike usage for the age group of 50-75 has increased significantly too, while the usage for the age group less than 25 increased too. The bike usage for the age group of 75 years or older has not increased much. Based on this information, we believe that the target market for Citi Bikes is 25 to 50 year olds. 
+
+3) In the year 2016 bike usage peaked from week 21 to week 44. This corresponds to the dates from May 16 to October 31. This is because bike usage is generally higher during the summer and fall months. It was also found that the median bike ride is longer during these months as the weather does not act as impediment for bikers. The highest median bike ride was in week 36 (12 minutes and 9 seconds), while the lowest was in week 7 (8 minutes and 8 seconds). Hence weather does play a part in biker's decision whether to bike or not. However, it remains to be seen which of the six weather predictors play the most important role in a user's decision to bike or not. 
+
+4) Based on the first graph, it can be seen that the overall popularity of this bike sharing system has surged significantly each year. It has increased each year since its inception. The number of bike rides continue to grow, but the number of bike rides in the last 4 months of the years are higher in 2013 than in 2014, albeit not by a big amount. This may have been because of the weather conditions. The average temperature in September 2013 was 67.2 degree Farenheit, 2 degrees higher than the average temperature in September 2014, which could have translated in the marginally lower number of bike rides in in September 2014 than in September 2013. Similarly, the average temperature in December 2013 was 2 degrees lower than the average temperature in December 2014. We hypothesize that weather conditions could be the reason for this slight decrease in bike rentals. However, it is still not quite clear about why the number of bike rides rented in October and November 2013 were marginally lower than in October and November 2014. 
+
+5) The bike usage is significantly higher during the weekdays than during weekends. This could be because the bikes are predominantly used by commuters commuting to work on weekdays. This drop is the highest during the commuting hours from 7am to 9am and from 4pm to 7pm, which makes us believe that commuters account for a majority of the bike rides in New York City. Based on this information, Citi Bikes could shift its major focus to commuters instead of any other group. This could be undertaking or promoting campaigns to bike to work, which would increase their annual memberships. 
+
+It is important to note that the exploratory analysis is based on a sample of 500,000 observations, which is 1% of the total population. This sample is representative of the population because of its large size. 
 
 ## Station Analysis
+
+
+```{r,cache=TRUE, echo=FALSE}
+# wrangling data for graphs
+start_sums <- randomsample %>%
+  group_by(start.station.id) %>%
+  summarize(start.station.longitude = mean(start.station.longitude),
+            start.station.latitude = mean(start.station.latitude),
+            total.time.out = sum(tripduration),
+            start.count = n()) %>% 
+  mutate(avg.time.out = total.time.out/start.count) %>%
+  select(-total.time.out) %>% 
+  ungroup()
+
+# the map used for plots
+center.citibikes <- c(
+  lon = mean(randomsample$start.station.longitude),
+  lat = mean(randomsample$start.station.latitude))
+mymap <- get_map(location = center.citibikes,
+                 maptype = "roadmap",
+                 zoom = 12)
+# heatmap
+ ggmap(mymap, extent = "panel", maprange=FALSE) +
+  geom_density2d(data = start_sums, 
+                           aes(x = start.station.longitude,
+                               y = start.station.latitude)) +
+  stat_density2d(data = start_sums, 
+                           aes(x = start.station.longitude,
+                               y = start.station.latitude, fill = ..level.., alpha = ..level..),
+                 size = 0.01, bins = 16, geom = 'polygon') +
+  scale_fill_gradient(low = "green", high = "red") +
+  scale_alpha(range = c(0.00, 0.25), guide = FALSE) +
+  theme(legend.position = "none", axis.title = element_blank(), text = element_text(size = 12)) +
+  ggtitle("Heatmap of Location of Bike Stations")
+```
+
+Count visualization Map
+```{r, cache=TRUE}
+ggmap(mymap) +  geom_point(data = start_sums, 
+                           aes(x = start.station.longitude,
+                               y = start.station.latitude,
+                               fill = "red", alpha = start.count),
+                           size = 1, shape = 21) +
+  guides(fill=FALSE, alpha=FALSE, size=FALSE)
+```
+
+Avg. Trip Time Map
+```{r, cache=TRUE}
+ggmap(mymap) +  geom_point(data = start_sums, 
+                           aes(x = start.station.longitude,
+                               y = start.station.latitude,
+                               fill = "red", alpha = avg.time.out),
+                           size = 1, shape = 21) +
+  guides(fill=FALSE, alpha=FALSE, size=FALSE)
+```
+
+
+```{r}
+start_sums %>% 
+  arrange(desc(start.count)) %>%
+  select(-start.station.latitude, -start.station.longitude) %>%
+  head()
+start_sums %>% 
+  arrange(desc(avg.time.out)) %>%
+  select(-start.station.latitude, -start.station.longitude) %>%
+  head()
+```
+
+```{r,cache= TRUE }
+end_sums <- randomsample %>%
+  group_by(end.station.id) %>%
+  summarize(end.station.longitude = mean(end.station.longitude),
+            end.station.latitude = mean(end.station.latitude),
+            total.time.in = sum(tripduration),
+            end.count = n()) %>% 
+  mutate(avg.time.in = total.time.in/end.count) %>%
+  select(-total.time.in) %>% 
+  ungroup()
+```
+
+```{r}
+colnames(start_sums)[1]<- c("id")
+colnames(end_sums)[1] <- c("id")
+joined_data<-inner_join(start_sums,end_sums,by="id")
+joined_data <- joined_data %>%
+mutate(difference = start.count - end.count,
+       station.latitude = 
+         (start.station.latitude+ end.station.latitude)/2,
+       station.longitude = 
+         (start.station.longitude + end.station.longitude)/2,
+       total.ride.count = start.count + end.count) %>%
+  mutate(normalized.difference =
+           difference/(start.count+end.count),
+         positive.difference = difference>0) %>%
+  select(-start.station.latitude,
+         -start.station.longitude,
+         -end.station.longitude,
+         -end.station.latitude) 
+```
+
+
+
+```{r,cache=TRUE, echo=FALSE}
+ggplot(data = start_sums, aes(x=total.ride.count)) +
+  geom_histogram()
+
+```
+
+
+```{r}
+top_ten_perc <- joined_data$total.ride.count %>% 
+  quantile(0.90)
+
+biggest_differences <- joined_data %>% 
+  filter(total.ride.count >= top_ten_perc) %>%
+  arrange(desc(normalized.difference)) %>%
+head(10)
+
+biggest_differences %>% 
+    select(id, start.count, end.count, 
+           difference, normalized.difference)
+
+smallest_differences <- joined_data %>% 
+  filter(total.ride.count >= top_ten_perc) %>%
+  arrange(normalized.difference) %>%
+head(10)
+smallest_differences %>%
+  select(id, start.count, end.count, 
+         difference, normalized.difference)
+```
+
+Difference visualization Map
+```{r, cache=TRUE}
+ggmap(mymap) +  geom_point(data = joined_data, 
+                           aes(x = station.longitude,
+                               y = station.latitude,
+                               fill = positive.difference, 
+                               alpha = 0.7),
+                           size = 1, shape = 21) +
+  guides(fill=FALSE, alpha=FALSE, size=FALSE) +
+  geom_point(data=biggest_differences,
+             aes(x = station.longitude,
+                 y = station.latitude,
+                 fill = "blue",
+                 alpha = 1.0),
+             size = 1, shape = 21) +
+    geom_point(data=smallest_differences,
+             aes(x = station.longitude,
+                 y = station.latitude,
+                 fill = "red",
+                 alpha = 1.0),
+             size = 1, shape = 21)
+```
+
+```{r}
+ggmap(mymap) +  
+    geom_point(data=smallest_differences,
+             aes(x = station.longitude,
+                 y = station.latitude,
+                 fill = "blue",
+                 alpha = 1.0),
+             size = 1, shape = 21) + 
+  guides(fill=FALSE, alpha=FALSE, size=FALSE)
+```
+
+```{r}
+ggmap(mymap) +  
+  geom_point(data=biggest_differences,
+             aes(x = station.longitude,
+                 y = station.latitude,
+                 fill = "red",
+                 alpha = 1.0),
+             size = 1, shape = 21) +
+  guides(fill=FALSE, alpha=FALSE, size=FALSE) 
+```
+
+```{r}
+head(joined_data)
+stations_of_interest <- joined_data %>% 
+  filter(id == 521 | id == 432)
+stations_of_interest
+```
+
+```{r}
+ggmap(mymap) +  
+  geom_point(data=stations_of_interest,
+             aes(x = station.longitude,
+                 y = station.latitude,
+                 fill = positive.difference,
+                 alpha = 1.0),
+             size = 4, shape = 21) +
+  guides(fill=FALSE, alpha=FALSE, size=FALSE) 
+```
+
+
+
+## Building a Model
+Rationale for Choosing the weather data variables:
+
+The variables relating to the weather data chosen are air temperature in Fahrenheit(tmpf), Dew Point Temperature in Fahrenheit (dwpf), Relative Humidity in percentage (relh), Wind Speed in knots (sknt), Pressure altimeter in inches (alti), and visibility in miles (vsby). We chose these variables because each of these variables can have an impact on a biker's decision to choose or not to choose to bike and can significantly affect bike usage. We chose these variables to build a preliminary model and make predictions based off the model. The other variables like wind direction in degrees from north, sky level coverages, sky level altitudes, and wind gust had some missing observations. We believe that these variables don't affect bike usage much and not including them would not affect the model. 
+
