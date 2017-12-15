@@ -101,7 +101,8 @@ rs <- randomsample %>%
 # Plotting the expansion of Citi Bikes Across New York
 ggplot(rs,aes(x=year,y=stations,fill=usertype))+geom_bar(stat="identity")+ylab("Number of Stations")+xlab("Station")+ggtitle("Expansion of Citi Bikes Across New York")
 
-
+combined$WorkingDay[combined$WorkingDay=="Yes"]<- "Weekday"
+combined$WorkingDay[combined$WorkingDay=="No"]<- "Weekend"
 ```
 
 ```{r}
@@ -124,7 +125,7 @@ combined2 <-  combined%>%
   mutate(wy=paste(week,"-",year)) %>%
   filter(year==2016) %>%
   arrange(year)
-
+arrange(combined2,desc(MedianDuration))
 # Graph to See the Usage in 2016
 ggplot(combined2,aes(x=week,y=usage,fill=MedianDuration))+geom_bar(stat="identity")+theme(axis.text.x = element_text(angle = 90, hjust = 1))+ggtitle("Weekly Bike Rides in 2016")+ylab("Usage")+xlab("Week")
 
@@ -139,11 +140,11 @@ ggplot(combined3,aes(x=WeekDay,y=usage,fill=MedianDuration))+geom_bar(stat = "id
 combined4 <- combined%>% 
   mutate(year=year(starttime),month=month(starttime),hour=hour(starttime)) %>%
   filter(!is.na(usertype))%>%
-  group_by(hour,gender,usertype)%>%
+  group_by(hour,gender,usertype,WorkingDay)%>%
   summarise(usage=n(),MedianDuration=median(tripduration))
 # The Number of Rides for every hour - Will make binary variables for TSNE Clustering then. 
 
-ggplot(combined4,aes(x=hour,y=usage,fill=usertype))+geom_bar(stat="identity")+xlab("Hour of the Day")+ylab("Number of Bike Rides")
+ggplot(combined4,aes(x=hour,y=usage,fill=WorkingDay))+geom_bar(stat="identity")+scale_fill_manual(values=c("skyblue", "maroon"))+facet_grid(~WorkingDay)+xlab("Hour of the Day")+ylab("Number of Bike Rides")
 
 # Making Different Levels for the Time of the Day
 combined.clustering <- combined4 %>%
@@ -158,10 +159,24 @@ combined4
 
 
 dim(combined4)
-combined4 <- combined4 %>%
+comb4 <- combined4 %>%
   filter(!is.na(usertype)) %>%
   mutate(usertype=ifelse(usertype=="Customer",1,0))
-combined4
+comb4
+
+# 
+combined5 <- combined%>% 
+    filter(!is.na(birth.year)) %>%
+  mutate(year=year(starttime),month=month(starttime),monyear=substr(starttime,1,7), age = 2017-birth.year) %>%
+  group_by(monyear,year,age,usertype,gender)%>%
+  summarise(usage=n())%>%
+  filter(age<100,gender!=0)
+combined5$gender <- as.factor(combined5$gender)
+
+ggplot(combined5,aes(x=age,y=usage,fill=gender))+geom_bar(stat="identity")+facet_grid(~year)+ggtitle("Yearly Bike Usage by Age and Gender")+ylab("Number of Bike Rides")+xlab("Age")+scale_fill_manual(values=c("skyblue", "lightgreen"))+geom_vline(xintercept = 75,alpha=0.5)+geom_vline(xintercept = 25,alpha=0.5)
+
+ggplot(combined5,aes(x=year,y=usage,fill=gender))+geom_bar(stat="identity")+theme(axis.text.x = element_text(angle = 90, hjust = 1))+facet_grid(~gender)+ggtitle("Yearly Bike Usage by Gender")+ylab("Number of Bike Rides")+xlab("Age")+scale_fill_manual(values=c("skyblue", "lightpink"))
+
 
 # run Rtsne with default parameters - tsne 
 tsne <- Rtsne(as.matrix(combined4), check_duplicates = FALSE, pca = FALSE, perplexity=30, theta=0.5, dims=2)
@@ -176,5 +191,30 @@ Rationale for Choosing the weather data variables:
 
 The variables relating to the weather data chosen are air temperature in Fahrenheit(tmpf), Dew Point Temperature in Fahrenheit (dwpf), Relative Humidity in percentage (relh), Wind Speed in knots (sknt), Pressure altimeter in inches (alti), and visibility in miles (vsby). We chose these variables because each of these variables can have an impact on a biker's decision to choose or not to choose to bike and can significantly affect bike usage. We chose these variables to build a preliminary model and make predictions based off the model. The other variables like wind direction in degrees from north, sky level coverages, sky level altitudes, and wind gust had some missing observations. We believe that these variables don't affect bike usage much and not including them would not affect the model. 
 
+Exploratory Data Analysis 
 
+Based on a preliminary exploratory analysis the following insights were found which could be useful for Citi Bikes: 
+
+1) It was found that bike usage for both females and males has increased each year since the initiation of this bike sharing project in July 2013. After the missing observations for gender were removed, it was found that bikes are being used predominantly by males. We believe this trend is unexpected and needs to be corrected. We posit that female prefer walking, which is why the bike usage for females is not very high as compared to bike usage for males. The 2017 data is only available till September. 
+
+2) It was found that bike usage has increased the most for the 30-50 years age group. The bike usage for the age group of 50-75 has increased significantly too. The bike usage for the age group of 75 years or older has not increased much. 
+
+3) In the year 2016 bike usage peaked from week 21 to week 44. This corresponds to the dates from May 16 to October 31. This is because bike usage is generally higher during the summer and fall months. It was also found that the median bike ride is longer during these months as the weather does not act as impediment for bikers. The highest median bike ride was in week 36 (12 minutes and 9 seconds), while the lowest was in week 7 (8 minutes and 8 seconds). Hence weather does play a part in biker's decision whether to bike or not. However, it remains to be seen which of the six weather predictors play the most important role in a user's decision to bike or not. 
+
+4) Based on the first graph, it can be seen that the overall popularity of this bike sharing system has surged significantly each year. It has increased each year since its inception. The number of bike rides continue to grow, but the number of bike rides in the last 4 months of the years are higher in 2013 than in 2014, albeit not by a big amount. This may have been because of the weather conditions. The average temperature in September 2013 was 67.2 degree Farenheit, 2 degrees higher than the average temperature in September 2014, which could have translated in the marginally lower number of bike rides in in September 2014 than in September 2013. Similarly, the average temperature in December 2013 was 2 degrees lower than the average temperature in December 2014. We hypothesize that weather conditions could be the reason for this slight decrease in bike rentals. However, it is still not quite clear about why the number of bike rides rented in October and November 2013 were marginally lower than in October and November 2014. 
+
+5) The bike usage is significantly higher during the weekdays than during weekends. This could be because the bikes are predominantly used by commuters commuting to work on weekdays. This drop is the highest during the commuting hours from 7am to 9am and from 4pm to 7pm, which makes us believe that commuters account for a majority of the bike rides in New York City. Based on this information, Citi Bikes could shift its major focus to commuters instead of any other group. This could be undertaking or promoting campaigns to bike to work, which would increase their annual memberships. 
+
+It is important to note that the exploratory analysis is based on a sample of 500,000 observations, which is 1% of the total population. This sample is representative of the population because of its large size. 
+
+```{r}
+# Trying to see the reason for #4 in the exploratory analysis
+w1 <- NYC %>%
+  mutate(year=year(starttime),month=month(starttime),monyear=substr(starttime,1,7)) %>%
+  filter(!is.na(tmpf)) %>%
+  group_by(monyear) %>%
+  summarise(avgtemp=mean(tmpf),adew=mean(dwpf))
+w1
+
+```
 
