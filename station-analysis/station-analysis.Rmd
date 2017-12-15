@@ -299,8 +299,36 @@ head(testing.521$net.change.521)
 mean(prediction)
 ```
 
+
+# linear model
+
+
+
+
+
+
 #SVM
-```{r, cache = TRUE
-training.521 <- training.521 %>%
-  mutate(net.change.521 = net.change.521 > 0) %>%
+```{r, cache = TRUE}
+station.521.svm<- station_521_combined %>%
+  mutate(net.change.521 = ifelse(net.change.521 > 0, "P","N")) 
+
+set.seed(4747)
+inTrain <- 
+  createDataPartition(station.521.svm$net.change.521,
+                      p = 0.7, list=FALSE)
+training.svm.521 <- station.521.svm[inTrain, ]
+testing.svm.521 <- station.521.svm[-inTrain,]
+head(training.svm.521)
+head(testing.svm.521)
+set.seed(47)
+svm.linear.model <- train(net.change.521~., data = training.svm.521, method="svmLinear", 
+                 trControl = trainControl(method="cv"),
+                 tuneGrid= expand.grid(C= (0.1)),
+                 preProcess = c("center", "scale"))
+
+svm.linear.pred <- predict(svm.linear.model, testing.svm.521)
+
+confusionMatrix(svm.linear.pred, testing.svm.521$net.change.521)
+
 ```
+
