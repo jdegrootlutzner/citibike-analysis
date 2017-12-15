@@ -93,13 +93,13 @@ combined <- inner_join(NYC,randomsample)
 
 # Number of Stations Every Year
 rs <- randomsample %>%
-  mutate(year=year(starttime)) %>%
-  group_by(year,usertype) %>%
+  mutate(year=year(starttime),monyear=substr(starttime,1,7)) %>%
+  group_by(year,usertype,monyear) %>%
   summarise(stations=n_distinct(start.station.id),rides=n())
 
 
 # Plotting the expansion of Citi Bikes Across New York
-ggplot(rs,aes(x=year,y=stations,fill=usertype))+geom_bar(stat="identity")+ylab("Number of Stations")+xlab("Station")+ggtitle("Expansion of Citi Bikes Across New York")
+ggplot(rs,aes(x=monyear,y=stations,fill=usertype))+geom_bar(stat="identity")+ylab("Number of Stations")+xlab("Station")+ggtitle("Expansion of Citi Bikes Across New York")
 
 combined$WorkingDay[combined$WorkingDay=="Yes"]<- "Weekday"
 combined$WorkingDay[combined$WorkingDay=="No"]<- "Weekend"
@@ -153,16 +153,8 @@ combined.clustering <- combined4 %>%
   mutate(DayTime=ifelse((hour=="10"|hour=="11"|hour=="12"|hour=="13"|hour=="14"|hour=="15"),1,0)) %>%
   mutate(Evening=ifelse((hour=="16"|hour=="17"|hour=="18"|hour=="19"|hour=="20"),1,0)) %>%
   mutate(Night=ifelse((hour=="21"|hour=="22"|hour=="23"|hour=="0"|hour=="1"|hour=="2"),1,0))
-combined4
 
 
-
-
-dim(combined4)
-comb4 <- combined4 %>%
-  filter(!is.na(usertype)) %>%
-  mutate(usertype=ifelse(usertype=="Customer",1,0))
-comb4
 
 # 
 combined5 <- combined%>% 
@@ -175,14 +167,11 @@ combined5$gender <- as.factor(combined5$gender)
 
 ggplot(combined5,aes(x=age,y=usage,fill=gender))+geom_bar(stat="identity")+facet_grid(~year)+ggtitle("Yearly Bike Usage by Age and Gender")+ylab("Number of Bike Rides")+xlab("Age")+scale_fill_manual(values=c("skyblue", "lightgreen"))+geom_vline(xintercept = 75,alpha=0.5)+geom_vline(xintercept = 25,alpha=0.5)
 
-ggplot(combined5,aes(x=year,y=usage,fill=gender))+geom_bar(stat="identity")+theme(axis.text.x = element_text(angle = 90, hjust = 1))+facet_grid(~gender)+ggtitle("Yearly Bike Usage by Gender")+ylab("Number of Bike Rides")+xlab("Age")+scale_fill_manual(values=c("skyblue", "lightpink"))
+ggplot(combined5,aes(x=year,y=usage,fill=gender))+geom_bar(stat="identity")+theme(axis.text.x = element_text(angle = 90, hjust = 1))+facet_grid(~gender)+ggtitle("Yearly Bike Usage by Gender")+ylab("Number of Bike Rides")+xlab("Year")+scale_fill_manual(values=c("skyblue", "lightpink"))
 
 
 # run Rtsne with default parameters - tsne 
-tsne <- Rtsne(as.matrix(combined4), check_duplicates = FALSE, pca = FALSE, perplexity=30, theta=0.5, dims=2)
-cols <- rainbow(10)
-plot(tsne$Y, t='n')
-text(tsne$Y, labels=combined4[,5])
+
 
 ```
 
@@ -214,7 +203,6 @@ w1 <- NYC %>%
   filter(!is.na(tmpf)) %>%
   group_by(monyear) %>%
   summarise(avgtemp=mean(tmpf),adew=mean(dwpf))
-w1
 
 ```
 
