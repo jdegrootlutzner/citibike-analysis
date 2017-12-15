@@ -16,9 +16,9 @@ library(ggplot2)
 library(readr)
 library(lubridate)
 library(chron)
-library(Rtsne)
+#library(Rtsne)
 
-randomsample <- read_csv("~/Desktop/compstats/ma154-project24-teambike/final_project/randomsample.csv")
+randomsample <- read_csv("data/randomsample.csv")
 ```
 
 

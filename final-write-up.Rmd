@@ -154,7 +154,9 @@ combined7 <- combined%>%
   group_by(hour,gender,usertype,WorkingDay)%>%
   summarise(usage=n(),MedianDuration=median(tripduration))
 # The Number of Rides for every hour - 
-
+```
+```{r, echo = TRUE, include=FALSE}
+# For some weird reason this graph is not working
 ggplot(combined7,aes(x=hour,y=usage,fill=WorkingDay))+
   geom_bar(stat="identity")+
   facet_grid(~WorkingDay)+
@@ -162,7 +164,8 @@ ggplot(combined7,aes(x=hour,y=usage,fill=WorkingDay))+
   xlab("Hour of the Day")+
   ylab("Number of Bike Rides")+
   ggtitle("Bike Usage on Weekdays versus Weekends")
-
+```
+```{r, echo = TRUE, echo=FALSE}
 # Making Different Levels for the Time of the Day
 combined4 <- combined4 %>%
   mutate(EarlyMorning=ifelse(hour=="3"|hour=="4"|hour=="5"|hour=="6",1,0)) %>%
