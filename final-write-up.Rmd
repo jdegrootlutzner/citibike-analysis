@@ -39,7 +39,7 @@ Instead of using the Kaggle data, we wanted to wrangle bike sharing data from a 
 
 Big Data in R is when the data cannot fit in to memory. Instead, we stored the data in a SQL database and received the data using 'RMySQL' and 'dplyr.' We based our work process off of the [Working with Big Data in R webinar.](https://www.rstudio.com/resources/webinars/working-with-big-data-in-r/). The life cycle of a big data analysis project usually involves five parts. Subset (extract data to explore and work with), clarify (become familiar with the data and template a solution), develop (create a working model), productize (automate and integrate), and publish. In other words, first work with a smaller sample, then scale up the work to a larger dataset.
 
-We worked on Jo Hardin's sever at the Pomona math department using MySQL. Since the server is within the Pomona network we needed to navigate both the Pomona ITS and Department firewall. Additonally, our limited permissions on our personal accounts made it difficult to update needed packages within R. These limitations forced us to learn, adapt, and change our project as needed.
+We worked on Dr. Jo Hardin's sever at the Pomona math department using MySQL. Since the server is within the Pomona network we needed to navigate both the Pomona ITS and Department firewall. Additonally, our limited permissions on our personal accounts made it difficult to update needed packages within R. These limitations forced us to learn, adapt, and change our project as needed.
 
 The first difficulty in the project was uploading the Citibikes data to a SQL database. Citibikes publishes a zip file for each month of data so there were over 50 seperate files to download. We wrote scripts to download, alter, and write csv files from the the Citibikes server, to our server, and then onto the MySQL database. The difficulties served as a learning experience as we developed better skills in the command line as well as in writing Shell, Python, and SQL code. You can see some of this code in the setup-code folder. Unfortunately, as of now our complete process is not reproducible by a single code but we can come back and add more explanation on how to use this code later.
 
@@ -205,13 +205,13 @@ ggplot(combined5,aes(x=year,y=usage,fill=gender))+
 
 Based on a preliminary exploratory analysis the following insights were found which could be useful for Citi Bikes: 
 
-1) It was found that bike usage for both females and males has increased each year since the initiation of this bike sharing project in May 2013 and since the data became available in July 2013. After the missing observations for gender were removed, it was found that bikes are used predominantly by males. We believe this trend is unexpected and needs to be corrected. We posit that female prefer walking, which is why the bike usage for females is not very high as compared to bike usage for males. The 2017 data is only available till September, which is why when compared to 2016 it shows a decline.
+1) In the graph above blue represents males and pink represents females. It was found that bike usage for both females and males has increased each year since the initiation of this bike sharing project in May 2013 and since the data became available in July 2013. After the missing observations for gender were removed, it was found that bikes are used predominantly by males. We believe this trend is unexpected and needs to be corrected. We posit that female prefer walking, which is why the bike usage for females is not very high as compared to bike usage for males. The 2017 data is only available till September, which is why when compared to 2016 it shows a decline.
 
 2) It was found that bike usage has increased the most for the 25-50 years age group. The bike usage for the age group of 50-75 has increased significantly too, while the usage for the age group less than 25 increased too. The bike usage for the age group of 75 years or older has not increased much. Based on this information, we believe that the target market for Citi Bikes is 25 to 50 year olds. 
 
-3) In the year 2016 bike usage peaked from week 21 to week 44. This corresponds to the dates from May 16 to October 31. This is because bike usage is generally higher during the summer and fall months. It was also found that the median bike ride is longer during these months as the weather does not act as impediment for bikers. The highest median bike ride was in week 36 (12 minutes and 9 seconds), while the lowest was in week 7 (8 minutes and 8 seconds). Hence weather does play a part in biker's decision whether to bike or not. However, it remains to be seen which of the six weather predictors play the most important role in a user's decision to bike or not. 
+3) In the year 2016 bike usage peaked from week 21 to week 44. This corresponds to the dates from May 16 to October 31. This is because bike usage is generally higher during the summer and fall months. It was also found that the median bike ride is longer during these months as the weather does not act as an impediment for bikers. The highest median bike ride was in week 36 (12 minutes and 9 seconds), while the lowest was in week 7 (8 minutes and 8 seconds). Hence weather does play a part in biker's decision whether to bike or not. However, it remains to be seen which of the six weather predictors play the most important role in a user's decision to bike or not. 
 
-4) Based on the first graph, it can be seen that the overall popularity of this bike sharing system has surged significantly each year. It has increased each year since its inception. The number of bike rides continue to grow, but the number of bike rides in the last 4 months of the years are higher in 2013 than in 2014, albeit not by a big amount. This may have been because of the weather conditions. The average temperature in September 2013 was 67.2 degree Farenheit, 2 degrees higher than the average temperature in September 2014, which could have translated in the marginally lower number of bike rides in in September 2014 than in September 2013. Similarly, the average temperature in December 2013 was 2 degrees lower than the average temperature in December 2014. We hypothesize that weather conditions could be the reason for this slight decrease in bike rentals. However, it is still not quite clear about why the number of bike rides rented in October and November 2013 were marginally lower than in October and November 2014. 
+4) Based on the first graph, it can be seen that the overall popularity of this bike sharing system has surged significantly each year. It has increased each year since its inception. The number of bike rides continue to grow, but the number of bike rides in the last four months in 2013 are higher than the last four months in 2014, albeit not by a big amount. This may have been because of the weather conditions. The average temperature in September 2013 was 67.2 degree Farenheit, 2 degrees higher than the average temperature in September 2014, which could have translated in the marginally lower number of bike rides in in September 2014 than in September 2013. Similarly, the average temperature in December 2013 was 2 degrees lower than the average temperature in December 2014. We hypothesize that weather conditions could be the reason for this slight decrease in bike rentals. However, it is still not quite clear about why the number of bike rides rented in October and November 2014 were marginally lower than in October and November 2013. 
 
 5) The bike usage is significantly higher during the weekdays than during weekends. This could be because the bikes are predominantly used by commuters commuting to work on weekdays. This drop is the highest during the commuting hours from 7am to 9am and from 4pm to 7pm, which makes us believe that commuters account for a majority of the bike rides in New York City. Based on this information, Citi Bikes could shift its major focus to commuters instead of any other group. This could be undertaking or promoting campaigns to bike to work, which would increase their annual memberships. 
 
@@ -279,9 +279,9 @@ ggmap(mymap) +  geom_point(data = start_sums,
           subtitle = "Darker Red = Longer Trip")
 ```
 
-The one red dot could be do to an outlier and is worth investigating more but we chose to go in a different direction.
+The one red dot could be an outlier and is worth investigating more but we chose to go in a different direction.
 
-At this point we moved in to our investigation of if a station was a net importer or exporter. To figure this out we calculated the sums of the number of trips in and out of a station for each station. We then found the difference between the start and the finish or the net change. The difference (start - finish) is positive if more bikes start at a station than end there, and is negative if more bikes end at a station than start there. *I confused myself and probably should have rethought about the change as in and out and then I would have gotten finish - start or in - out. Anyways, please deal with this confusion*
+At this point we moved in to our investigation of whether a station was a net importer or exporter. To figure this out we calculated the sums of the number of trips in and out of a station for each station. We then found the difference between the start and the finish or the net change. The difference (start - finish) is positive if more bikes start at a station than end there, and is negative if more bikes end at a station than start there. *I confused myself and probably should have rethought about the change as in and out and then I would have gotten finish - start or in - out. Anyways, please deal with this confusion*
 
 We normalized the difference by dividing it by the total station trips and we filtered the stations to only look at the top ten percent of the most popular stations (the stations with the most bike rides). Looking back at our metric, we could have adjusted for how long the bike station has been around and looked at how the usage has changed overttime. For example, did extreme popularity of one station spark a new station near it that helped provide more supply of bikes? That's a question we should look at in the future.
 
@@ -412,7 +412,7 @@ station_521$starttime <- mdy
 station_521$starttime[is.na(station_521$starttime)] <- f1[is.na(station_521$starttime)]
 ```
 
-We wrote code to wrangle the data so that it is ready to make interesting graphs about each station but we never had time to make the graphs. The code can be found in station-analysis.Rmd.
+We wrote code to wrangle the data so that it is ready to make interesting graphs about each station but we never had time to make the graphs. The start times, end times and dates were in different formats. We made the Citi Bikes date time objects and the weather data date time objects into one format using the tidyverse package lubridate. The code can be found in station-analysis.Rmd. 
 
 ```{r, cache= TRUE, echo=FALSE}
 
@@ -535,18 +535,18 @@ prediction <- predict(rf.model, testing.521)
 
 RMSE(prediction, testing.521$net.change.521)
 ```
-16.86 is too high of a Root Mean Squared Error to be effective but just for fun let's look at how accurate the model was at classifying if the difference was positive or negative (export or import).
+Addtionally, let's see let's look at how accurate the model was at classifying if the difference was positive or negative (export or import).
 ```{r, cache = TRUE, echo=FALSE}
 actual_positive_change <- (testing.521$net.change.521 > 0)
 pred_positive_change <- (prediction > 0)
 confusionMatrix(pred_positive_change, actual_positive_change)
 ```
-Does our model do better than predicting all of the differences as negative ?
+Does our model do better than predicting all of the differences as negative ? (All of the hourly changes as import for station 521)
 ```{r, cache = TRUE, echo=FALSE}
 all_true <- (prediction < -10000)
 confusionMatrix(all_true, actual_positive_change)
 ```
-Our model did do better than predicting all of the differences as positive. But without an accurate number this does not help us too much. Let's compare this result to SVM .
+Yes, our classification error reat is better than baseline (classifying all the hourly changes for station 521 as net import). However, the RMSE is still very high. 16.86 is too high of a Root Mean Squared Error to be effective in predicting when a station might need bikes moved to it. The RMSE means that the errors are off by almost 17 bikes. That means that the prediction could predict 16 bikes left a station but actually no bikes left the station. In a future model, we should just predict the hourly demand (not hourly change) for each station and then create information from that.
 
 ### SVM Linear Classification 
 
@@ -573,7 +573,8 @@ svm.linear.pred <- predict(svm.linear.model, testing.svm.521)
 confusionMatrix(svm.linear.pred, testing.svm.521$net.change.521)
 
 ```
+The accuracy rate for the Support Vector Machines model was slightly lower than Random Forest by about 2 % but still better than the base line prediction.
 
 ## Final Remarks
 
-Our last modeling step was rushed. We did not spend the time graphing the data to better visualize how weather interacts with bike demand. Additionally, we did not spend enough time choosing variables and optimizing the models. Building models on large sets of data is time consuming! However, we still wanted to incorporate it to show how the data analysis life cycle might work. **We started with a very large dataset, then made a random sample to learn about the overall data. From the randomized sample we discovered that we wanted to look into a new subset of data (on stations we thought were of interest). We began to build a model on this data but found that it was not very effective at predicting our desired information (when to move bikes from one station to another).** The next step would be to go back to the drawing board and come up with a better way to approach our orignal goal. Once our model works we could scale it up to the larger dataset and then finish the cycle of the data analysis!
+Our last modeling step was rushed. We did not spend the time graphing the data to better visualize how weather interacts with bike demand. Additionally, we did not spend enough time choosing variables and optimizing the models. Building models on large sets of data is time consuming! However, we still wanted to incorporate it to show how the data analysis life cycle might work. **We started with a very large dataset, then made a random sample to learn about the overall data. From the randomized sample we discovered that we wanted to look into a new subset of data (on stations we thought were of interest). We began to build a model on this data but found that it was not very effective at predicting our desired information (when to move bikes from one station to another).** The next step would be to go back to the drawing board and come up with a better way to approach our orignal goal. Once our model works we could scale it up to the larger dataset and then finish the cycle of the data analysis! Overall, this project, despite its limitations, was a great learning experience for the both of us. We ended up learning five new things throughout the course of this project namely big data analysis, SQL, ggmaps, shell, and wrangling using lubridate.
