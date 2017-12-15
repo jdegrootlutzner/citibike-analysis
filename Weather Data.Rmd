@@ -159,3 +159,6 @@ Based on a preliminary exploratory analysis the following insights were found wh
 
 It is important to note that the exploratory analysis is based on a sample of 500,000 observations, which is 1% of the total population. This sample is representative of the population because of its large size. 
 
+
+
+
