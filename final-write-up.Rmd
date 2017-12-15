@@ -222,6 +222,9 @@ It is important to note that the exploratory analysis is based on a sample of 50
 
 ## Station Analysis
 
+After getting a better sense of the data, we will return to one of the orignal questions we had. Are there any bike stations that have inconsistencies between bike supply and bike demand? This part of the exploratory analysis moves to the stations. 
+
+First lets see where the stations are located in New York City.
 
 ```{r,cache=TRUE, echo=FALSE}
 # wrangling data for graphs
@@ -229,10 +232,8 @@ start_sums <- randomsample %>%
   group_by(start.station.id) %>%
   summarize(start.station.longitude = mean(start.station.longitude),
             start.station.latitude = mean(start.station.latitude),
-            total.time.out = sum(tripduration),
+            median.time.out = median(tripduration, na.rm= TRUE),
             start.count = n()) %>% 
-  mutate(avg.time.out = total.time.out/start.count) %>%
-  select(-total.time.out) %>% 
   ungroup()
 
 # the map used for plots
@@ -257,51 +258,45 @@ mymap <- get_map(location = center.citibikes,
   ggtitle("Heatmap of Location of Bike Stations")
 ```
 
-Count visualization Map
-```{r, cache=TRUE}
+As you can see most bike stations are centered in lower Manhatten. Now lets get a different but related view of Citibikes as shown by the number of rides per station.
+```{r, cache=TRUE, echo=FALSE}
 ggmap(mymap) +  geom_point(data = start_sums, 
                            aes(x = start.station.longitude,
                                y = start.station.latitude,
                                fill = "red", alpha = start.count),
                            size = 1, shape = 21) +
-  guides(fill=FALSE, alpha=FALSE, size=FALSE)
+  guides(fill=FALSE, alpha=FALSE, size=FALSE) +
+  ggtitle("Number of Rides per Station", subtitle = "Darker Red = More Rides")
 ```
 
-Avg. Trip Time Map
-```{r, cache=TRUE}
+As we can see most bike rides happen in downtown Manhatten. The rides really slim out over the east and west side of Central park. We can see a slight increase of red in Brooklyn on the opposite side of the Brooklyn Bridge. We must keep in mind that we did not account for the number of years that the station was around. Now let's take a look at the median trip duration.
+```{r, cache=TRUE, echo=FALSE}
 ggmap(mymap) +  geom_point(data = start_sums, 
                            aes(x = start.station.longitude,
                                y = start.station.latitude,
-                               fill = "red", alpha = avg.time.out),
+                               fill = "red", 
+                               alpha = median.time.out),
                            size = 1, shape = 21) +
-  guides(fill=FALSE, alpha=FALSE, size=FALSE)
+  guides(fill=FALSE, alpha=FALSE, size=FALSE) + 
+  ggtitle("Median Trip Duration to Station",
+          subtitle = "Darker Red = Longer Trip")
 ```
 
+The one red dot could be do to an outlier and is worth investigating more but we chose to go in a different direction.
 
-```{r}
-start_sums %>% 
-  arrange(desc(start.count)) %>%
-  select(-start.station.latitude, -start.station.longitude) %>%
-  head()
-start_sums %>% 
-  arrange(desc(avg.time.out)) %>%
-  select(-start.station.latitude, -start.station.longitude) %>%
-  head()
-```
+At this point we moved in to our investigation of if a station was a net importer or exporter. To figure this out we calculated the sums of the number of trips in and out of a station for each station. We then found the difference between the start and the finish or the net change. The difference (start - finish) is positive if more bikes start at a station than end there, and is negative if more bikes end at a station than start there. **I confused myself and probably should have rethought about the change as in and out and then I would have gotten finish - start or in - out. Anyways, please deal with this confusion**
 
-```{r,cache= TRUE }
+We normalized the difference by dividing it by the total station trips and we filtered the stations to only look at the top ten percent of the most popular stations (the stations with the most bike rides). Looking back at our metric, we could have adjusted for how long the bike station has been around and looked at how the usage has changed overttime. For example, did extreme popularity of one station spark a new station near it that helped provide more supply of bikes? That's a question we should look at in the future.
+
+```{r,cache= TRUE, echo=FALSE}
 end_sums <- randomsample %>%
   group_by(end.station.id) %>%
   summarize(end.station.longitude = mean(end.station.longitude),
             end.station.latitude = mean(end.station.latitude),
-            total.time.in = sum(tripduration),
+            median.time.in = median(tripduration, na.rm = TRUE),
             end.count = n()) %>% 
-  mutate(avg.time.in = total.time.in/end.count) %>%
-  select(-total.time.in) %>% 
   ungroup()
-```
 
-```{r}
 colnames(start_sums)[1]<- c("id")
 colnames(end_sums)[1] <- c("id")
 joined_data<-inner_join(start_sums,end_sums,by="id")
@@ -321,16 +316,9 @@ mutate(difference = start.count - end.count,
          -end.station.latitude) 
 ```
 
+Here is a list of the top exporters - more bikes start from these stations than end at these stations. They need more bikes. 
 
-
-```{r,cache=TRUE, echo=FALSE}
-ggplot(data = start_sums, aes(x=total.ride.count)) +
-  geom_histogram()
-
-```
-
-
-```{r}
+```{r, cache = TRUE, echo=FALSE}
 top_ten_perc <- joined_data$total.ride.count %>% 
   quantile(0.90)
 
@@ -343,6 +331,11 @@ biggest_differences %>%
     select(id, start.count, end.count, 
            difference, normalized.difference)
 
+```
+
+Here is a list of the top importer - more bikes **end** at these stations than start in these stations. They have excess bikes.
+
+```{r, cache=TRUE, echo=FALSE}
 smallest_differences <- joined_data %>% 
   filter(total.ride.count >= top_ten_perc) %>%
   arrange(normalized.difference) %>%
@@ -352,59 +345,34 @@ smallest_differences %>%
          difference, normalized.difference)
 ```
 
-Difference visualization Map
-```{r, cache=TRUE}
-ggmap(mymap) +  geom_point(data = joined_data, 
-                           aes(x = station.longitude,
-                               y = station.latitude,
-                               fill = positive.difference, 
-                               alpha = 0.7),
-                           size = 1, shape = 21) +
+Tables of data are no fun! Let's see the data visualized.
+
+```{r, cache=TRUE, echo = FALSE}
+ggmap(mymap) +
   guides(fill=FALSE, alpha=FALSE, size=FALSE) +
   geom_point(data=biggest_differences,
              aes(x = station.longitude,
                  y = station.latitude,
                  fill = "blue",
                  alpha = 1.0),
-             size = 1, shape = 21) +
+             size = 3, shape = 21) +
     geom_point(data=smallest_differences,
              aes(x = station.longitude,
                  y = station.latitude,
                  fill = "red",
                  alpha = 1.0),
-             size = 1, shape = 21)
+             size = 3, shape = 21)
 ```
 
-```{r}
-ggmap(mymap) +  
-    geom_point(data=smallest_differences,
-             aes(x = station.longitude,
-                 y = station.latitude,
-                 fill = "blue",
-                 alpha = 1.0),
-             size = 1, shape = 21) + 
-  guides(fill=FALSE, alpha=FALSE, size=FALSE)
-```
+As you can see most of the most popular importers are in the lower side of Manhatten. Most of the popular exporters are closer to time square. Although the analysis is not perfect. We decided to move on and make a predictive models on the top two stations. We chose our importer to be station 432, which is in Alphabet City (at E 7 St & Avenue A near Washington Square Park), and our exporter to be station 521, which is in Midtown between the Empire State Building and Lincoln Tunnel (at 8 Ave & W 31 St N). Shown below:
 
-```{r}
-ggmap(mymap) +  
-  geom_point(data=biggest_differences,
-             aes(x = station.longitude,
-                 y = station.latitude,
-                 fill = "red",
-                 alpha = 1.0),
-             size = 1, shape = 21) +
-  guides(fill=FALSE, alpha=FALSE, size=FALSE) 
-```
-
-```{r}
+```{r, cache = TRUE, echo=FALSE}
+# Narrow down the two highest normalized difference stations
 head(joined_data)
 stations_of_interest <- joined_data %>% 
-  filter(id == 521 | id == 432)
-stations_of_interest
-```
+  filter(id == 432 | id == 521)
 
-```{r}
+# Plot to show where they are
 ggmap(mymap) +  
   geom_point(data=stations_of_interest,
              aes(x = station.longitude,
@@ -412,10 +380,12 @@ ggmap(mymap) +
                  fill = positive.difference,
                  alpha = 1.0),
              size = 4, shape = 21) +
-  guides(fill=FALSE, alpha=FALSE, size=FALSE) 
+  guides(fill=FALSE, alpha=FALSE, size=FALSE)  +
+  ggtitle("Stations of Interest",
+          subtitle = "Station 432 in Red, Station 521 in Blue")
 ```
 
-
+Let's move on to our model.
 
 ## Building a Model
 Rationale for Choosing the weather data variables:
