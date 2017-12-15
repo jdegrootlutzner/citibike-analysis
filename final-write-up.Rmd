@@ -1,0 +1,41 @@
+---
+title: "final-write-up"
+author: "Julian DeGroot-Lutzner & Adi Salwan"
+date: "12/14/2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo= TRUE, message = FALSE, warning = FALSE,
+                      fig.width = 7, fig.height = 4,
+                      fig.align = "center")
+options(digits=4)
+
+require(dplyr)
+require(ggplot2)
+require(RMySQL)
+require(lubridate)
+require(ggmap)
+require(readr)
+require(chron)
+require(caret)
+```
+
+## R Markdown
+ see <http://rmarkdown.rstudio.com>. **Knit** 
+ 
+ 
+ 
+# Background and Motivation
+
+# Working with Big Data in R
+
+# Understanding the Random Sample
+## Exploratory Analyis
+```{r}
+randomsample <- read_csv("data/randomsample.csv")
+```
+
+
+
+## Station Analysis
